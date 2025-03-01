@@ -1,0 +1,181 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+ 
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 18%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 18%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 18%;
+    --primary: 16 98% 41%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 0 0% 18%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 45%;
+    --accent: 16 98% 41%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 16 98% 41%;
+    --radius: 0.5rem;
+  }
+ 
+  .dark {
+    --background: 0 0% 18%;
+    --foreground: 0 0% 100%;
+    --card: 0 0% 18%;
+    --card-foreground: 0 0% 100%;
+    --popover: 0 0% 18%;
+    --popover-foreground: 0 0% 100%;
+    --primary: 16 98% 41%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 0 0% 25%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 0 0% 25%;
+    --muted-foreground: 0 0% 65%;
+    --accent: 16 98% 41%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 25%;
+    --input: 0 0% 25%;
+    --ring: 16 98% 41%;
+  }
+}
+
+/* HubSpot Form Styling */
+.custom-hubspot-form {
+  max-width: 100%;
+}
+
+.custom-hubspot-form .hs-form-field {
+  margin-bottom: 1rem;
+}
+
+.custom-hubspot-form .hs-form-field label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 0.25rem;
+}
+
+.custom-hubspot-form .hs-input {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  font-size: 1rem;
+  transition: border-color 0.15s ease-in-out;
+}
+
+.custom-hubspot-form .hs-input:focus {
+  outline: none;
+  border-color: #d04a02;
+  box-shadow: 0 0 0 2px rgba(208, 74, 2, 0.2);
+}
+
+.custom-hubspot-form .hs-error-msgs {
+  list-style: none;
+  padding: 0;
+  margin: 0.25rem 0 0;
+}
+
+.custom-hubspot-form .hs-error-msgs label {
+  color: #ef4444;
+  font-size: 0.75rem;
+}
+
+.custom-hubspot-form .hs-button {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background-color: #d04a02 !important;
+  color: white !important;
+  font-weight: 500 !important;
+  padding: 0.75rem 1.5rem !important;
+  border-radius: 0.375rem !important;
+  border: none !important;
+  cursor: pointer !important;
+  transition: background-color 0.15s ease-in-out !important;
+  width: 100% !important;
+  margin-top: 1rem !important;
+  position: relative !important;
+  z-index: 10 !important;
+}
+
+.custom-hubspot-form .hs-button:hover {
+  background-color: #b33f02 !important;
+}
+
+.custom-hubspot-form .hs-richtext {
+  margin-bottom: 1rem;
+}
+
+.custom-hubspot-form .legal-consent-container {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+/* Fix for HubSpot form submission button */
+.custom-hubspot-form .hs-button.primary {
+  position: relative !important;
+  z-index: 10 !important;
+  pointer-events: auto !important;
+}
+
+.custom-hubspot-form .hs-button.primary:before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: -1;
+  border-radius: 0.375rem;
+  background-color: #d04a02;
+  transition: background-color 0.15s ease-in-out;
+}
+
+.custom-hubspot-form .hs-button.primary:hover:before {
+  background-color: #b33f02;
+}
+
+.custom-hubspot-form .submitted-message {
+  padding: 1rem;
+  background-color: #f0fdf4;
+  border: 1px solid #86efac;
+  border-radius: 0.375rem;
+  color: #166534;
+  text-align: center;
+}
+
+/* Additional fixes for button clickability */
+.custom-hubspot-form form {
+  position: relative;
+  z-index: 1;
+}
+
+.custom-hubspot-form .hs-button-wrapper {
+  position: relative;
+  z-index: 5;
+}
+
+.custom-hubspot-form input[type="submit"] {
+  cursor: pointer !important;
+  pointer-events: auto !important;
+}
+
+/* Ensure form elements are clickable */
+.custom-hubspot-form .hs-form-field input,
+.custom-hubspot-form .hs-form-field select,
+.custom-hubspot-form .hs-form-field textarea,
+.custom-hubspot-form .hs-form-field button {
+  pointer-events: auto !important;
+}
