@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Brain, Menu, X, ClipboardCheck, Database } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -10,9 +10,10 @@ const Navbar = () => {
     { label: 'Home', path: '/' },
     { label: 'About', path: '/about' },
     { label: 'Services', path: '/services' },
+    { label: 'Framework', path: '/framework' },
     { label: 'Industries', path: '/industries' },
     { label: 'Insights', path: '/insights' },
-    { label: 'Contact', path: '/contact' },
+    { label: 'Contact', path: '/contact' }
   ];
 
   const assessments = [
@@ -25,6 +26,11 @@ const Navbar = () => {
       label: 'Data Maturity Assessment',
       path: '/data-maturity',
       icon: Database
+    },
+    {
+      label: 'AI Maturity Assessment',
+      path: '/framework/maturity-assessment',
+      icon: Brain
     }
   ];
 
@@ -50,16 +56,12 @@ const Navbar = () => {
                 {item.label}
               </Link>
             ))}
-            <div className="flex space-x-2">
-              {assessments.map((assessment) => (
-                <Link key={assessment.path} to={assessment.path}>
-                  <Button variant="default" className="flex items-center">
-                    <assessment.icon className="mr-2 h-4 w-4" />
-                    {assessment.label}
-                  </Button>
-                </Link>
-              ))}
-            </div>
+            <Link to="/assess">
+              <Button variant="default" className="flex items-center">
+                <ClipboardCheck className="mr-2 h-4 w-4" />
+                Assess Your Organization
+              </Button>
+            </Link>
           </div>
 
           {/* Mobile menu button */}
@@ -88,18 +90,15 @@ const Navbar = () => {
                 {item.label}
               </Link>
             ))}
-            {assessments.map((assessment) => (
-              <Link
-                key={assessment.path}
-                to={assessment.path}
-                onClick={() => setIsMenuOpen(false)}
-              >
-                <Button variant="default" className="w-full mt-4 flex items-center justify-center">
-                  <assessment.icon className="mr-2 h-4 w-4" />
-                  {assessment.label}
-                </Button>
-              </Link>
-            ))}
+            <Link
+              to="/assess"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              <Button variant="default" className="w-full mt-4 flex items-center justify-center">
+                <ClipboardCheck className="mr-2 h-4 w-4" />
+                Assess Your Organization
+              </Button>
+            </Link>
           </div>
         </div>
       )}

@@ -5,6 +5,13 @@ import Footer from './components/layout/Footer';
 import Home from './pages/Home';
 import About from './pages/About';
 import Services from './pages/Services';
+import Framework from './pages/Framework';
+import KanzMaturityModel from './pages/framework/KanzMaturityModel';
+import AIReadinessFrameworkPage from './pages/framework/AIReadinessFrameworkPage';
+import AIStrategyFramework from './pages/framework/AIStrategyFramework';
+import ConsultingProcess from './pages/framework/ConsultingProcess';
+import AIMaturityAssessment from './pages/framework/AIMaturityAssessment';
+import AssessYourOrganization from './pages/AssessYourOrganization';
 import Industries from './pages/Industries';
 import Insights from './pages/Insights';
 import Contact from './pages/Contact';
@@ -42,6 +49,13 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/about" element={<About />} />
             <Route path="/services" element={<Services />} />
+            <Route path="/framework" element={<Framework />} />
+            <Route path="/framework/maturity-model" element={<KanzMaturityModel />} />
+            <Route path="/framework/ai-readiness" element={<AIReadinessFrameworkPage />} />
+            <Route path="/framework/ai-strategy" element={<AIStrategyFramework />} />
+            <Route path="/framework/consulting-process" element={<ConsultingProcess />} />
+            <Route path="/framework/maturity-assessment" element={<AIMaturityAssessment />} />
+            <Route path="/assess" element={<AssessYourOrganization />} />
             <Route path="/industries" element={<Industries />} />
             <Route path="/insights" element={<Insights />} />
             <Route path="/contact" element={<Contact />} />
