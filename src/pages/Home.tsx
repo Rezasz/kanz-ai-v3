@@ -136,6 +136,41 @@ const Home = () => {
         </div>
       </section>
 
+      {/* UAE Pride Section */}
+      <section className="relative overflow-hidden">
+        <div className="relative h-[420px] md:h-[500px]">
+          <img
+            src="/uae-pride.png"
+            alt="Proud to be UAE based"
+            className="w-full h-full object-cover object-center"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent" />
+          <div className="absolute inset-0 flex items-center">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <motion.div
+                initial={{ opacity: 0, x: -30 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.8 }}
+                className="max-w-xl"
+              >
+                <div className="flex items-center gap-3 mb-4">
+                  <span className="text-4xl">🇦🇪</span>
+                  <span className="text-white/80 uppercase tracking-widest text-sm font-semibold">Made in the UAE</span>
+                </div>
+                <h2 className="text-4xl md:text-5xl font-bold text-white leading-tight mb-4">
+                  Proudly UAE-Based,<br />Globally Minded
+                </h2>
+                <p className="text-white/85 text-lg leading-relaxed">
+                  Born in the heart of Dubai, Kanz.ai carries the UAE's spirit of ambition, innovation, and excellence
+                  to every engagement. We are honoured to represent the nation's vision of becoming a global AI leader —
+                  serving clients across the Emirates and beyond.
+                </p>
+              </motion.div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* CTA Section */}
       <section className="py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
