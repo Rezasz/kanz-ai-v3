@@ -1,18 +1,10 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
-import { Brain, Shield, Target, Database, Users, Lightbulb, BarChart, Layers, Cpu, Briefcase, GraduationCap, Calculator, CheckCircle } from 'lucide-react';
+import { Brain, Shield, Target, Database, Lightbulb, BarChart, Layers, Briefcase, GraduationCap, Calculator } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import HubSpotForm from '../components/HubSpotForm';
 
 const Insights = () => {
-  const [newsletterSubmitted, setNewsletterSubmitted] = useState(false);
-
-  const handleNewsletterSubmit = () => {
-    setNewsletterSubmitted(true);
-    console.log("Newsletter form submitted successfully");
-  };
-
   return (
     <div className="pt-16">
       {/* Hero Section */}

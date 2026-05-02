@@ -1,15 +1,74 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Mail, MapPin, Phone, Send, CheckCircle } from 'lucide-react';
-import HubSpotForm from '../components/HubSpotForm';
+import { Mail, MapPin, Phone, Send, CheckCircle, AlertCircle } from 'lucide-react';
+
+const OMNIINBOX_ENDPOINT = 'https://omniinbox.kanz.ai/public/contact-form';
+const OMNIINBOX_TOKEN = 'omni-shared-vxaLteemYkqFMYaAgCwHXgHraNiweFKY';
+const COMPANY_SLUG = 'kanz-ai';
+
+const inputClasses =
+  'w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-400 focus:outline-none focus:border-pwc-orange focus:ring-2 focus:ring-pwc-orange/20 transition-colors';
 
 const Contact = () => {
   const [formSubmitted, setFormSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const renderedAtRef = useRef(Date.now());
 
-  const handleFormSubmit = () => {
-    setFormSubmitted(true);
-    // You can add additional logic here, like analytics tracking
-    console.log("Form submitted successfully");
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setErrorMessage(null);
+
+    const formEl = e.currentTarget;
+    const data = Object.fromEntries(new FormData(formEl).entries()) as Record<string, string>;
+
+    if (data.website_field || Date.now() - renderedAtRef.current < 2500) {
+      setFormSubmitted(true);
+      formEl.reset();
+      return;
+    }
+
+    const body = {
+      company_slug: COMPANY_SLUG,
+      email: data.email,
+      message: data.message,
+      name: data.name || undefined,
+      phone: data.phone || undefined,
+      company: data.company || undefined,
+      subject: data.subject || undefined,
+      page_url: window.location.href,
+      metadata: {
+        referrer: document.referrer || null,
+        user_agent: navigator.userAgent,
+      },
+    };
+
+    setSubmitting(true);
+    try {
+      const res = await fetch(OMNIINBOX_ENDPOINT, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${OMNIINBOX_TOKEN}`,
+        },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      formEl.reset();
+      setFormSubmitted(true);
+    } catch {
+      setErrorMessage(
+        'Sorry, something went wrong. Please try again or email contact@kanz.ai.'
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleSendAnother = () => {
+    setFormSubmitted(false);
+    setErrorMessage(null);
+    renderedAtRef.current = Date.now();
   };
 
   return (
@@ -50,20 +109,144 @@ const Contact = () => {
                   </div>
                   <h3 className="text-xl font-semibold mb-2">Thank You!</h3>
                   <p className="text-gray-600">
-                    Your message has been submitted successfully. We'll get back to you shortly.
+                    Your message has been received. We'll get back to you shortly.
                   </p>
-                  <button 
-                    onClick={() => setFormSubmitted(false)}
+                  <button
+                    onClick={handleSendAnother}
                     className="mt-6 px-4 py-2 bg-pwc-orange text-white rounded-md hover:bg-[#b33f02] transition-colors"
                   >
                     Send Another Message
                   </button>
                 </div>
               ) : (
-                <HubSpotForm 
-                  className="custom-hubspot-form" 
-                  onFormSubmit={handleFormSubmit}
-                />
+                <form onSubmit={handleSubmit} noValidate className="relative space-y-4">
+                  <div>
+                    <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                      Name
+                    </label>
+                    <input
+                      id="name"
+                      name="name"
+                      type="text"
+                      autoComplete="name"
+                      placeholder="Your name"
+                      className={inputClasses}
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                      Email <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      id="email"
+                      name="email"
+                      type="email"
+                      required
+                      autoComplete="email"
+                      placeholder="you@company.com"
+                      className={inputClasses}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
+                        Phone
+                      </label>
+                      <input
+                        id="phone"
+                        name="phone"
+                        type="tel"
+                        autoComplete="tel"
+                        placeholder="+971 ..."
+                        className={inputClasses}
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="company" className="block text-sm font-medium text-gray-700 mb-1">
+                        Company
+                      </label>
+                      <input
+                        id="company"
+                        name="company"
+                        type="text"
+                        autoComplete="organization"
+                        placeholder="Company name"
+                        className={inputClasses}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-1">
+                      Subject
+                    </label>
+                    <input
+                      id="subject"
+                      name="subject"
+                      type="text"
+                      maxLength={500}
+                      placeholder="What's this about?"
+                      className={inputClasses}
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-1">
+                      Message <span className="text-red-500">*</span>
+                    </label>
+                    <textarea
+                      id="message"
+                      name="message"
+                      required
+                      rows={5}
+                      placeholder="How can Kanz.ai help you?"
+                      className={inputClasses}
+                    />
+                  </div>
+
+                  {/* honeypot: hidden from users, bots fill it */}
+                  <input
+                    name="website_field"
+                    type="text"
+                    tabIndex={-1}
+                    autoComplete="off"
+                    aria-hidden="true"
+                    style={{
+                      position: 'absolute',
+                      left: '-9999px',
+                      width: '1px',
+                      height: '1px',
+                      opacity: 0,
+                    }}
+                  />
+
+                  {errorMessage && (
+                    <div
+                      role="alert"
+                      className="flex items-start gap-2 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md p-3"
+                    >
+                      <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                      <span>{errorMessage}</span>
+                    </div>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="w-full inline-flex items-center justify-center px-4 py-2.5 bg-pwc-orange text-white font-medium rounded-md hover:bg-[#b33f02] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    {submitting ? (
+                      'Sending…'
+                    ) : (
+                      <>
+                        <Send className="h-4 w-4 mr-2" />
+                        Send message
+                      </>
+                    )}
+                  </button>
+                </form>
               )}
             </motion.div>
 
@@ -134,9 +317,9 @@ const Contact = () => {
                         702-Opal Tower, Business Bay<br />
                         Dubai, UAE
                       </p>
-                      <a 
-                        href="https://maps.google.com/?q=Opal+Tower+Business+Bay+Dubai" 
-                        target="_blank" 
+                      <a
+                        href="https://maps.google.com/?q=Opal+Tower+Business+Bay+Dubai"
+                        target="_blank"
                         rel="noopener noreferrer"
                         className="mt-4 inline-block px-4 py-2 bg-pwc-orange text-white rounded-md hover:bg-[#b33f02] transition-colors"
                       >
