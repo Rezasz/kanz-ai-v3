@@ -17,6 +17,7 @@ import Insights from './pages/Insights';
 import Contact from './pages/Contact';
 import AIReadiness from './pages/AIReadiness';
 import DataMaturityAssessment from './pages/DataMaturityAssessment';
+import AIRiskAssessment from './pages/AIRiskAssessment';
 import Energy from './pages/industries/Energy';
 import BankingFinance from './pages/industries/BankingFinance';
 import Manufacturing from './pages/industries/Manufacturing';
@@ -62,6 +63,7 @@ function App() {
             <Route path="/contact" element={<Contact />} />
             <Route path="/ai-readiness" element={<AIReadiness />} />
             <Route path="/data-maturity" element={<DataMaturityAssessment />} />
+            <Route path="/ai-risk-assessment" element={<AIRiskAssessment />} />
             <Route path="/industries/energy" element={<Energy />} />
             <Route path="/industries/banking-finance" element={<BankingFinance />} />
             <Route path="/industries/manufacturing" element={<Manufacturing />} />

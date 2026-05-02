@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Brain, Database, Target, ArrowRight } from 'lucide-react';
+import { Brain, Database, Target, ArrowRight, ShieldAlert } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 
@@ -27,7 +27,7 @@ const AssessYourOrganization = () => {
       {/* Assessment Cards */}
       <section className="py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {assessments.map((assessment, index) => (
               <motion.div
                 key={assessment.title}
@@ -139,6 +139,18 @@ const assessments = [
       "Capability assessment",
       "Strategic alignment check",
       "Growth opportunity identification"
+    ]
+  },
+  {
+    title: "AI Risk Self-Assessment",
+    description: "Assess your organization's exposure to AI risk across governance, privacy, security, misinformation, misuse, oversight, and system safety.",
+    icon: ShieldAlert,
+    link: "/ai-risk-assessment",
+    features: [
+      "Seven AI risk domains scored 0-140",
+      "Domain-level radar profile",
+      "Causal diagnosis (who, when, intent)",
+      "Top-three priority areas + actions"
     ]
   }
 ];
