@@ -6,6 +6,19 @@ const OMNIINBOX_ENDPOINT = 'https://omniinbox.kanz.ai/public/contact-form';
 const OMNIINBOX_TOKEN = 'omni-shared-vxaLteemYkqFMYaAgCwHXgHraNiweFKY';
 const COMPANY_SLUG = 'kanz-ai';
 
+const UTM_KEYS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'] as const;
+
+const collectUtmParams = (): Record<string, string> => {
+  if (typeof window === 'undefined') return {};
+  const params = new URLSearchParams(window.location.search);
+  const utm: Record<string, string> = {};
+  for (const key of UTM_KEYS) {
+    const value = params.get(key);
+    if (value) utm[key] = value;
+  }
+  return utm;
+};
+
 const inputClasses =
   'w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-400 focus:outline-none focus:border-pwc-orange focus:ring-2 focus:ring-pwc-orange/20 transition-colors';
 
@@ -35,11 +48,13 @@ const Contact = () => {
       name: data.name || undefined,
       phone: data.phone || undefined,
       company: data.company || undefined,
-      subject: data.subject || undefined,
+      subject: data.subject || 'Contact form submission',
       page_url: window.location.href,
       metadata: {
+        form: 'contact',
         referrer: document.referrer || null,
         user_agent: navigator.userAgent,
+        ...collectUtmParams(),
       },
     };
 
