@@ -28,6 +28,7 @@ import DigitalTransformation from './pages/services/DigitalTransformation';
 import AIImplementation from './pages/services/AIImplementation';
 import AIGovernance from './pages/services/AIGovernance';
 import DataAnalytics from './pages/services/DataAnalytics';
+import AIRiskManagement from './pages/services/AIRiskManagement';
 import AIReadinessFramework from './pages/insights/AIReadinessFramework';
 import ScalableAIStrategy from './pages/insights/ScalableAIStrategy';
 import AIGovernanceCompliance from './pages/insights/AIGovernanceCompliance';
@@ -72,6 +73,7 @@ function App() {
             <Route path="/services/ai-implementation" element={<AIImplementation />} />
             <Route path="/services/ai-governance" element={<AIGovernance />} />
             <Route path="/services/data-analytics" element={<DataAnalytics />} />
+            <Route path="/services/ai-risk-management" element={<AIRiskManagement />} />
             <Route path="/insights/ai-readiness-framework" element={<AIReadinessFramework />} />
             <Route path="/insights/scalable-ai-strategy" element={<ScalableAIStrategy />} />
             <Route path="/insights/ai-governance-compliance" element={<AIGovernanceCompliance />} />

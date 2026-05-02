@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Brain, Lightbulb, Target, Cog, Shield, BarChart } from 'lucide-react';
+import { Brain, Lightbulb, Target, Cog, Shield, BarChart, ShieldAlert } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 
@@ -157,6 +157,18 @@ const mainServices = [
       "Advanced analytics",
       "Predictive modeling",
       "Visualization"
+    ]
+  },
+  {
+    title: "AI Risk Management",
+    description: "Build governed, trusted, and scalable AI through risk assessment and oversight",
+    icon: ShieldAlert,
+    link: "/services/ai-risk-management",
+    features: [
+      "AI risk assessment",
+      "Use case risk classification",
+      "Responsible AI policies",
+      "Vendor & control evaluation"
     ]
   }
 ];
