@@ -97,7 +97,8 @@ push). Set in **Vercel → Project Settings → Environment Variables** for
 production, or in `.env.local` for local dev (gitignored).
 
 ```env
-VITE_OMNIINBOX_ENDPOINT=https://omniinbox.kanz.ai/public/contact-form
+# Base URL only — the helper appends /public/contact-form.
+VITE_OMNIINBOX_ENDPOINT=https://omniinbox.kanz.ai
 VITE_OMNIINBOX_TOKEN=omni-shared-...
 VITE_OMNIINBOX_SLUG=kanz-ai
 ```
@@ -143,7 +144,7 @@ End-to-end test (no React needed):
 
 ```bash
 curl -i -X POST 'https://omniinbox.kanz.ai/public/contact-form' \
-  -H 'Authorization: Bearer omni-shared-vxaLteemYkqFMYaAgCwHXgHraNiweFKY' \
+  -H 'Authorization: Bearer omni-shared-IqT-sVE1QXYpYVZDGQNHp8UxcUggL5tY' \
   -H 'Content-Type: application/json' \
   -d '{"company_slug":"kanz-ai","email":"qa@example.com","message":"sanity check"}'
 # Expect: 201 Created, {"success":true,"message_id":N,...}

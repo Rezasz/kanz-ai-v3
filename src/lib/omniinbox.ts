@@ -6,12 +6,19 @@
 // kanz.ai shared values so the form works without any Vercel changes.
 // To rotate the token, set the env vars in Vercel and redeploy.
 
-const ENDPOINT =
-  import.meta.env.VITE_OMNIINBOX_ENDPOINT ||
-  'https://omniinbox.kanz.ai/public/contact-form';
+// Per the spec, VITE_OMNIINBOX_ENDPOINT is a base URL (e.g.
+// `https://omniinbox.kanz.ai`) and we append the form path. We tolerate
+// callers who set it to the full path so existing Vercel config keeps working.
+const ENDPOINT_PATH = '/public/contact-form';
+const ENDPOINT_BASE =
+  (import.meta.env.VITE_OMNIINBOX_ENDPOINT as string | undefined)?.replace(/\/+$/, '') ||
+  'https://omniinbox.kanz.ai';
+const ENDPOINT = ENDPOINT_BASE.endsWith(ENDPOINT_PATH)
+  ? ENDPOINT_BASE
+  : `${ENDPOINT_BASE}${ENDPOINT_PATH}`;
 const TOKEN =
   import.meta.env.VITE_OMNIINBOX_TOKEN ||
-  'omni-shared-vxaLteemYkqFMYaAgCwHXgHraNiweFKY';
+  'omni-shared-IqT-sVE1QXYpYVZDGQNHp8UxcUggL5tY';
 const SLUG = import.meta.env.VITE_OMNIINBOX_SLUG || 'kanz-ai';
 
 export type ContactPayload = {

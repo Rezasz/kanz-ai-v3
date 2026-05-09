@@ -17,9 +17,9 @@ isn't obvious from reading the code.
 
 ## OmniInbox operations
 
-**Endpoint:** `https://omniinbox.kanz.ai/public/contact-form`
+**Endpoint base:** `https://omniinbox.kanz.ai` (helper appends `/public/contact-form`)
 **Slug:** `kanz-ai`
-**Token:** `omni-shared-vxaLteemYkqFMYaAgCwHXgHraNiweFKY` (also baked into bundle as fallback)
+**Token:** `omni-shared-IqT-sVE1QXYpYVZDGQNHp8UxcUggL5tY` (also baked into bundle as fallback)
 **Spec:** https://github.com/Rezasz/omniinbox/blob/main/docs/external-developer-guide.md
 
 ### Verify a real browser submission landed
@@ -167,7 +167,7 @@ ls dist/assets/ | grep -E '^index-.*\.js$'      # should match the above
 
 # Test OmniInbox endpoint directly
 curl -i -X POST 'https://omniinbox.kanz.ai/public/contact-form' \
-  -H 'Authorization: Bearer omni-shared-vxaLteemYkqFMYaAgCwHXgHraNiweFKY' \
+  -H 'Authorization: Bearer omni-shared-IqT-sVE1QXYpYVZDGQNHp8UxcUggL5tY' \
   -H 'Content-Type: application/json' \
   -d '{"company_slug":"kanz-ai","email":"qa@example.com","message":"test"}'
 
