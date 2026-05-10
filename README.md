@@ -11,8 +11,8 @@ transformation consultancy (702 Opal Tower, Business Bay).
 
 - **React 18 + TypeScript** on **Vite 5**
 - **React Router v6** (38 client-side routes — see below)
-- **Tailwind CSS** with shadcn-style HSL CSS vars
-- **Framer Motion** for entrance animations
+- **Tailwind CSS** with CSS-variable design tokens + shadcn-style HSL vars
+- **Framer Motion** for entrance animations (legacy detail pages only)
 - **Chart.js / react-chartjs-2** for radar charts in the assessments
 - **jsPDF + html2canvas** for PDF export of assessment reports
 - **Lucide React** for all icons
@@ -29,34 +29,77 @@ npm run build    # production build to dist/
 npm run lint
 ```
 
+## Design system
+
+The site uses an **ink + technical** palette derived from the brand PDF.
+Dark paper, warm-cream ink, and a saturated amber-orange accent.
+
+| Token | Value | Purpose |
+|---|---|---|
+| `--paper` | `#0A0A09` | Default surface (near-black, slightly warm) |
+| `--paper-2` | `#15140F` | Section / card surface inset from paper |
+| `--ink` | `#F5F1EA` | Default foreground (warm cream) |
+| `--ink-2` | `#E5DFD3` | Slightly dimmer ink for body copy |
+| `--muted` | `#9B968E` | Captions, eyebrow labels, mono codes |
+| `--accent` | `#F2A024` | Brand amber-orange — italic words, dots, bullets, dark CTA |
+| `--paper-light` | `#F5F1EA` | Inverse cream surface (UAE Pride, Capabilities, Featured paper) |
+| `--ink-on-light` | `#0E0E0C` | Dark text used on `--paper-light` |
+| `--display` | `Space Grotesk` | Display + italic accent words (faux-italic) |
+| `--sans` | `Inter` | Body copy |
+| `--mono` | `JetBrains Mono` | Eyebrows, codes (`01`, `I/02`, `F/03`, `CASE/04`) |
+
+⚠️ **CSS variable name collision to know about** — shadcn's tokens
+(`--primary`, `--accent`, `--muted`, etc.) share names with what the brand
+system wants to use directly. The shadcn variants are renamed to
+`--accent-hsl` / `--muted-hsl` and wrapped in `hsl(...)` inside
+`tailwind.config.js`. **Don't rename them back** — see HANDOFF.md →
+"CSS variable collision (the bug that hid the accent)".
+
+The design primitives — `Container`, `Eyebrow`, `DisplayHead`, `GoldItalic`,
+`ArrowBtn`, `ArrowLink`, `KanzMark`, `PageHero`, `PageCTA`, `MarqueeStrip`,
+`HeroBackdrop`, `StatBlock`, `MaturityRadar`, `Section`, `FeatureGrid`,
+`BulletList`, `MonoList` — all live in `src/components/design/index.tsx`.
+
+The 27 detail pages (services/\*, industries/\*, insights/\*, framework/\*)
+keep their original markup; `src/legacy-overrides.css` translates the
+"light mode" Tailwind utility classes (`bg-white`, `text-gray-600`,
+`shadow-md`, `from-pwc-orange`, …) into the ink palette without per-file
+rewrites.
+
 ## Project structure
 
 ```
 src/
-  App.tsx                     38 routes wired here
+  App.tsx                     38 routes + ScrollToTop on route change
   main.tsx
-  index.css                   Tailwind + shadcn HSL vars
+  index.css                   Design tokens + base typography
+  legacy-overrides.css        Tailwind utility → ink palette remap for detail pages
   components/
+    design/index.tsx          All shared design primitives + tokens
     ContactForm.tsx           Reusable form, calls submitToOmniInbox
-    layout/Navbar.tsx         Fixed top nav, mobile hamburger, "Assess" CTA
-    layout/Footer.tsx         4-column footer
+    layout/Navbar.tsx         Overlay nav, scroll blur, active-route dot
+    layout/Footer.tsx         5-column footer w/ gold dots + italic tagline
     ui/button.tsx             shadcn-style Button (cva variants)
   lib/
     omniinbox.ts              submitToOmniInbox helper (env-configured)
     utils.ts                  cn() — clsx + tailwind-merge
   pages/
-    Home.tsx, About.tsx, Services.tsx, Framework.tsx,
+    Home.tsx                  Hero w/ radar backdrop, framework radar, services list,
+                              capabilities thesis (cream), industries grid,
+                              UAE Pride (cream), insights cards, assessments CTA
+    About.tsx, Services.tsx, Framework.tsx,
     Industries.tsx, Insights.tsx, Contact.tsx,
     AssessYourOrganization.tsx
     AIReadiness.tsx, DataMaturityAssessment.tsx,
-    AIRiskAssessment.tsx       7-domain × 0-4 scoring + radar
-    framework/   5 framework pages
-    industries/  6 industry pages
-    services/    6 service pages (AIRiskManagement is newest)
-    insights/    10 long-form articles
+    AIRiskAssessment.tsx       7-domain × 0-4 scoring + radar (gold-tinted)
+    framework/                 5 framework pages
+    industries/                6 industry pages
+    services/                  6 service pages
+    insights/                  10 long-form articles
   utils/pdfExport.ts           html2canvas → jsPDF, A4 multi-page
 public/
-  uae-pride.png                Hero image for Home UAE Pride section
+  favicon.svg                  Kanz mark (ink + gold)
+  uae-pride.png                Legacy hero image (no longer used on Home)
 vercel.json                    SPA rewrite — every path → /index.html
 .env.example                   OmniInbox env var template
 ```
@@ -81,13 +124,8 @@ vercel.json                    SPA rewrite — every path → /index.html
 | `/ai-risk-assessment` | AI Risk Self-Assessment (7 domains, 35 + 3 questions) |
 | `/contact` | Contact form (OmniInbox) |
 
-## Brand
-
-- `pwc-orange` `#d04a02` — primary CTA, headings, icons
-- `pwc-gray` `#2d2d2d` — body text, nav
-- Hero gradient — `from-pwc-orange to-[#b33f02]`
-
-(Names date from a PwC-style template the project was scaffolded from. Not affiliated with PwC.)
+`App.tsx` mounts a `<ScrollToTop>` watcher inside `<Router>` that resets
+scroll on every route change (and scrolls to `#anchor` if the URL has a hash).
 
 ## Environment variables
 
@@ -157,7 +195,7 @@ curl -i -X POST 'https://omniinbox.kanz.ai/public/contact-form' \
 
 - **Token in browser bundle** — Option A from the OmniInbox guide. Public-but-unguessable shared token. To move it server-side, switch to Option B (would require a backend, e.g. a Vercel serverless function).
 - **Honeypot + 2.5s time-trap** — submissions in under 2.5 seconds silently show success without POSTing (see `ContactForm.tsx`). This catches bots but can fool fast manual testers — wait at least 3 seconds when verifying.
-- **TS strict warnings** — assessment pages (`AIReadiness.tsx`, `DataMaturityAssessment.tsx`) and several others have pre-existing `noImplicitAny` and unused-import warnings. Build still passes; the new code (`AIRiskAssessment.tsx`, `omniinbox.ts`, `ContactForm.tsx`) is clean.
+- **TS strict warnings** — assessment pages (`AIReadiness.tsx`, `DataMaturityAssessment.tsx`) and several others have pre-existing `noImplicitAny` and unused-import warnings. Build still passes; the new code (design system, page rewrites, `AIRiskAssessment.tsx`, `omniinbox.ts`, `ContactForm.tsx`) is clean.
 - **Bundle size** — single ~1.6 MB JS chunk. Not yet code-split. Consider `manualChunks` if it becomes a perf concern.
 
 ## License
