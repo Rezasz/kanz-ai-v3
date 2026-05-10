@@ -111,7 +111,7 @@ function PaperCard({ title, excerpt, category, link, num }: { num: number } & (t
           >
             {category}
           </span>
-          <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--muted)' }}>
+          <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--accent)' }}>
             / {String(num).padStart(2, '0')}
           </span>
         </div>

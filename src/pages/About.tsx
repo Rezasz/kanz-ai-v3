@@ -255,7 +255,7 @@ const About = () => {
                     >
                       {s.sector}
                     </span>
-                    <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--muted)' }}>
+                    <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--accent)' }}>
                       CASE / {String(i + 1).padStart(2, '0')}
                     </span>
                   </div>

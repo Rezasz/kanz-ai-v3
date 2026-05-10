@@ -106,13 +106,16 @@
   background-color: var(--accent) !important;
 }
 
-/* Orange hero gradients used across detail pages: convert from a flat orange
-   slab to the dark paper + warm gold accent line aesthetic. */
+/* Orange hero gradients used across detail pages: replace the flat orange
+   slab with a dark paper backdrop and a strong gold corner glow that says
+   "this is a hero". Stronger than the previous subtle treatment so the
+   brand accent reads even on inner pages. */
 :where(body) .bg-gradient-to-r.from-pwc-orange,
 :where(body) [class*="from-pwc-orange"] {
   background: var(--paper) !important;
   background-image:
-    radial-gradient(circle at 80% -10%, color-mix(in oklab, var(--accent) 22%, transparent) 0%, transparent 55%),
+    radial-gradient(circle at 85% -20%, color-mix(in oklab, var(--accent) 45%, transparent) 0%, transparent 50%),
+    radial-gradient(circle at -10% 110%, color-mix(in oklab, var(--accent) 18%, transparent) 0%, transparent 40%),
     linear-gradient(180deg, var(--paper) 0%, var(--paper-2) 100%) !important;
   color: var(--ink) !important;
   border-bottom: 1px solid var(--line-strong);
@@ -125,9 +128,9 @@
   left: 0;
   right: 0;
   bottom: 0;
-  height: 1px;
+  height: 2px;
   background: linear-gradient(90deg, transparent, var(--accent), transparent);
-  opacity: 0.6;
+  opacity: 0.85;
   pointer-events: none;
 }
 :where(body) .bg-gradient-to-r.from-pwc-orange .text-white,
@@ -161,4 +164,37 @@
 :where(body) img.rounded-lg,
 :where(body) img.rounded-md {
   border: 1px solid var(--line-strong);
+}
+
+/* Detail page H2 section headers gain a small gold left bar so the accent
+   shows up consistently across inner pages where we couldn't rewrite the
+   markup. The hero h1 already gets the corner glow + bottom gold line. */
+:where(body) .pt-16 section h2 {
+  position: relative;
+  padding-left: 22px;
+}
+:where(body) .pt-16 section h2::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.55em;
+  width: 12px;
+  height: 2px;
+  background: var(--accent);
+}
+/* Skip the gold bar inside the hero section to avoid double-accent */
+:where(body) .pt-16 section.bg-gradient-to-r.from-pwc-orange h1,
+:where(body) .pt-16 section[class*="from-pwc-orange"] h2 {
+  padding-left: 0;
+}
+:where(body) .pt-16 section[class*="from-pwc-orange"] h2::before {
+  display: none;
+}
+
+/* Lucide icons rendered with text-pwc-orange already inherit the new accent
+   through tailwind config, but the soft halo (bg-orange-100) sometimes loses
+   its gold tint after the mapping — make sure it stays warm. */
+:where(body) .bg-orange-100 svg,
+:where(body) [class*="bg-orange-100"] svg {
+  color: var(--accent) !important;
 }

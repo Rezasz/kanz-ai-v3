@@ -26,8 +26,8 @@
     --line-on-light: rgba(14, 14, 12, 0.08);
     --line-strong-on-light: rgba(14, 14, 12, 0.16);
 
-    --accent: oklch(0.74 0.19 65);
-    --accent-soft: oklch(0.74 0.19 65 / 0.14);
+    --accent: #F2A024;
+    --accent-soft: rgba(242, 160, 36, 0.14);
     --accent-ink: oklch(0.74 0.10 220);
     --display: 'Space Grotesk', system-ui, -apple-system, sans-serif;
     --sans: 'Inter', system-ui, -apple-system, sans-serif;

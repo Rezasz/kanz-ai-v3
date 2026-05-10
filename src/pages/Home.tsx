@@ -475,7 +475,7 @@ function PracticeSection() {
                 style={{
                   fontFamily: 'var(--mono)',
                   fontSize: 12,
-                  color: 'var(--muted)',
+                  color: 'var(--accent)',
                   letterSpacing: '0.1em',
                 }}
               >
@@ -689,7 +689,7 @@ function IndustriesSection() {
                   style={{
                     fontFamily: 'var(--mono)',
                     fontSize: 11,
-                    color: 'var(--muted)',
+                    color: 'var(--accent)',
                     letterSpacing: '0.14em',
                     marginBottom: 24,
                   }}

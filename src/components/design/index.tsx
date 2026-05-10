@@ -100,8 +100,10 @@ export function GoldItalic({ children }: { children: ReactNode }) {
       style={{
         fontStyle: 'italic',
         color: 'var(--accent)',
-        fontFamily: "'Instrument Serif', Georgia, serif",
-        fontWeight: 400,
+        // Use the display font (Space Grotesk) faux-italic so the gold word
+        // sits inside the same headline family — matches the brand PDF.
+        fontFamily: 'var(--display)',
+        fontWeight: 'var(--display-weight)' as unknown as number,
       }}
     >
       {children}

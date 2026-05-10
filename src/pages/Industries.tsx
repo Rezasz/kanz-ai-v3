@@ -105,11 +105,11 @@ function IndustryCard({ title, glyph, description, solutions, link, num }: { num
           fontFamily: 'var(--mono)',
           fontSize: 11,
           letterSpacing: '0.18em',
-          color: 'var(--muted)',
+          color: 'var(--accent)',
           marginBottom: 32,
         }}
       >
-        / {String(num).padStart(2, '0')}
+        I / {String(num).padStart(2, '0')}
       </div>
       <h3
         style={{
