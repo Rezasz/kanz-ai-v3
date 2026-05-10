@@ -1,67 +1,199 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Brain, Mail, MapPin, Phone } from 'lucide-react';
+import { Container, KanzMark } from '@/components/design';
+
+const COLS: { h: string; items: [string, string][] }[] = [
+  {
+    h: 'Services',
+    items: [
+      ['AI Strategy & Consulting', '/services/ai-strategy'],
+      ['Digital Transformation', '/services/digital-transformation'],
+      ['AI Implementation', '/services/ai-implementation'],
+      ['AI Governance', '/services/ai-governance'],
+      ['Data Analytics', '/services/data-analytics'],
+      ['AI Risk Management', '/services/ai-risk-management'],
+    ],
+  },
+  {
+    h: 'Framework',
+    items: [
+      ['Kanz Maturity Model', '/framework/maturity-model'],
+      ['AI Readiness', '/framework/ai-readiness'],
+      ['AI Strategy', '/framework/ai-strategy'],
+      ['Consulting Process', '/framework/consulting-process'],
+      ['Maturity Assessment', '/framework/maturity-assessment'],
+    ],
+  },
+  {
+    h: 'Industries',
+    items: [
+      ['Banking & Finance', '/industries/banking-finance'],
+      ['Manufacturing', '/industries/manufacturing'],
+      ['Healthcare', '/industries/healthcare'],
+      ['Retail & E-commerce', '/industries/retail'],
+      ['Public Sector', '/industries/public-sector'],
+      ['Energy', '/industries/energy'],
+    ],
+  },
+  {
+    h: 'Company',
+    items: [
+      ['About', '/about'],
+      ['Insights', '/insights'],
+      ['Contact', '/contact'],
+      ['Assess Your Organization', '/assess'],
+    ],
+  },
+];
 
 const Footer = () => {
   return (
-    <footer className="bg-gray-900 text-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+    <footer
+      style={{
+        background: 'var(--paper-2)',
+        color: 'var(--ink)',
+        padding: '120px 0 40px',
+        marginTop: 0,
+        borderTop: '1px solid var(--line)',
+      }}
+    >
+      <Container>
+        <div className="kanz-footer-grid">
           <div>
-            <Link to="/" className="flex items-center">
-              <Brain className="h-8 w-8 text-blue-400" />
-              <span className="ml-2 text-xl font-bold">Kanz.ai</span>
-            </Link>
-            <p className="mt-4 text-gray-400">
-              Leading the way in AI-driven digital transformation and business consulting.
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24, color: 'var(--ink)' }}>
+              <KanzMark size={32} />
+              <span
+                style={{
+                  fontFamily: 'var(--display)',
+                  fontWeight: 'var(--display-weight)' as unknown as number,
+                  fontSize: 28,
+                  letterSpacing: '-0.02em',
+                }}
+              >
+                Kanz<span style={{ color: 'var(--accent)' }}>.</span>ai
+              </span>
+            </div>
+            <p
+              style={{
+                fontFamily: "'Instrument Serif', Georgia, serif",
+                fontStyle: 'italic',
+                fontSize: 22,
+                lineHeight: 1.3,
+                color: 'var(--ink)',
+                opacity: 0.85,
+                margin: '0 0 32px',
+                maxWidth: 360,
+              }}
+            >
+              Your trusted partner in AI &amp; Digital Transformation.
             </p>
+            <div
+              style={{
+                fontFamily: 'var(--mono)',
+                fontSize: 11,
+                lineHeight: 1.8,
+                color: 'var(--muted)',
+                letterSpacing: '0.05em',
+              }}
+            >
+              702 OPAL TOWER
+              <br />
+              BUSINESS BAY, DUBAI
+              <br />
+              UNITED ARAB EMIRATES
+              <br />
+              <a
+                href="mailto:contact@kanz.ai"
+                style={{ color: 'var(--accent)', textDecoration: 'none' }}
+              >
+                CONTACT@KANZ.AI
+              </a>
+            </div>
           </div>
-
-          <div>
-            <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
-            <ul className="space-y-2">
-              <li><Link to="/about" className="text-gray-400 hover:text-white">About Us</Link></li>
-              <li><Link to="/services" className="text-gray-400 hover:text-white">Services</Link></li>
-              <li><Link to="/industries" className="text-gray-400 hover:text-white">Industries</Link></li>
-              <li><Link to="/insights" className="text-gray-400 hover:text-white">Insights</Link></li>
-            </ul>
-          </div>
-
-          <div>
-            <h3 className="text-lg font-semibold mb-4">Services</h3>
-            <ul className="space-y-2">
-              <li><Link to="/services/ai-strategy" className="text-gray-400 hover:text-white">AI Consulting</Link></li>
-              <li><Link to="/services/digital-transformation" className="text-gray-400 hover:text-white">Digital Transformation</Link></li>
-              <li><Link to="/services/ai-implementation" className="text-gray-400 hover:text-white">Enterprise AI Solutions</Link></li>
-              <li><Link to="/ai-readiness" className="text-gray-400 hover:text-white">AI Readiness Assessment</Link></li>
-            </ul>
-          </div>
-
-          <div>
-            <h3 className="text-lg font-semibold mb-4">Contact</h3>
-            <ul className="space-y-2">
-              <li className="flex items-center">
-                <MapPin className="h-5 w-5 mr-2 text-blue-400" />
-                <span className="text-gray-400">702-Opal Tower, Business Bay, Dubai, UAE</span>
-              </li>
-              <li className="flex items-center">
-                <Phone className="h-5 w-5 mr-2 text-blue-400" />
-                <span className="text-gray-400">+971-42327866</span>
-              </li>
-              <li className="flex items-center">
-                <Mail className="h-5 w-5 mr-2 text-blue-400" />
-                <span className="text-gray-400">contact@kanz.ai</span>
-              </li>
-            </ul>
-          </div>
+          {COLS.map((c) => (
+            <div key={c.h}>
+              <div
+                style={{
+                  fontFamily: 'var(--mono)',
+                  fontSize: 11,
+                  letterSpacing: '0.16em',
+                  textTransform: 'uppercase',
+                  color: 'var(--muted)',
+                  marginBottom: 18,
+                }}
+              >
+                {c.h}
+              </div>
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {c.items.map(([label, path]) => (
+                  <li key={label}>
+                    <Link
+                      to={path}
+                      style={{
+                        color: 'var(--ink)',
+                        opacity: 0.85,
+                        textDecoration: 'none',
+                        fontSize: 13.5,
+                      }}
+                    >
+                      {label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </div>
 
-        <div className="mt-12 pt-8 border-t border-gray-800">
-          <div className="text-center text-gray-400">
-            <p>&copy; {new Date().getFullYear()} Kanz.ai. All rights reserved.</p>
+        <div
+          style={{
+            marginTop: 80,
+            paddingTop: 32,
+            borderTop: '1px solid var(--line-strong)',
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: 16,
+            justifyContent: 'space-between',
+            fontFamily: 'var(--mono)',
+            fontSize: 11,
+            letterSpacing: '0.06em',
+            color: 'var(--muted)',
+          }}
+        >
+          <div>© {new Date().getFullYear()} KANZ.AI — ALL RIGHTS RESERVED</div>
+          <div style={{ display: 'flex', gap: 28, flexWrap: 'wrap' }}>
+            <Link to="/contact" style={{ color: 'inherit', textDecoration: 'none' }}>
+              CONTACT
+            </Link>
+            <Link to="/assess" style={{ color: 'inherit', textDecoration: 'none' }}>
+              ASSESSMENTS
+            </Link>
+            <a href="tel:+97142327866" style={{ color: 'inherit', textDecoration: 'none' }}>
+              +971 4 232 7866
+            </a>
           </div>
         </div>
-      </div>
+      </Container>
+
+      <style>{`
+        .kanz-footer-grid {
+          display: grid;
+          grid-template-columns: 1.4fr repeat(4, 1fr);
+          gap: 48px;
+        }
+        @media (max-width: 1100px) {
+          .kanz-footer-grid {
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+          }
+        }
+        @media (max-width: 640px) {
+          .kanz-footer-grid {
+            grid-template-columns: 1fr;
+            gap: 32px;
+          }
+        }
+      `}</style>
     </footer>
   );
 };

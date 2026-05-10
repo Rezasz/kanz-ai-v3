@@ -1,11 +1,31 @@
 import { useRef, useState } from 'react';
-import { Send, CheckCircle, AlertCircle } from 'lucide-react';
+import { AlertCircle, CheckCircle, Send } from 'lucide-react';
 import { submitToOmniInbox } from '@/lib/omniinbox';
 
 type State = 'idle' | 'sending' | 'ok' | 'error';
 
-const inputClasses =
-  'w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-400 focus:outline-none focus:border-pwc-orange focus:ring-2 focus:ring-pwc-orange/20 transition-colors';
+const FIELD_BASE: React.CSSProperties = {
+  width: '100%',
+  background: 'var(--paper-2)',
+  color: 'var(--ink)',
+  border: '1px solid var(--line-strong)',
+  borderRadius: 8,
+  padding: '12px 14px',
+  fontFamily: 'var(--sans)',
+  fontSize: 15,
+  outline: 'none',
+  transition: 'border-color .15s ease, background .15s ease',
+};
+
+const LABEL_STYLE: React.CSSProperties = {
+  display: 'block',
+  fontFamily: 'var(--mono)',
+  fontSize: 10,
+  letterSpacing: '0.18em',
+  color: 'var(--muted)',
+  textTransform: 'uppercase',
+  marginBottom: 8,
+};
 
 export function ContactForm() {
   const [state, setState] = useState<State>('idle');
@@ -23,7 +43,6 @@ export function ContactForm() {
     const form = e.currentTarget;
     const data = Object.fromEntries(new FormData(form).entries()) as Record<string, string>;
 
-    // honeypot + time-trap (bots fire instantly, humans don't)
     if (data.website_field || Date.now() - renderedAt.current < 2500) {
       setState('ok');
       form.reset();
@@ -53,43 +72,74 @@ export function ContactForm() {
 
   if (state === 'ok') {
     return (
-      <div className="text-center py-8">
-        <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
-          <CheckCircle className="h-8 w-8 text-green-600" />
+      <div style={{ padding: '40px 16px', textAlign: 'left' }}>
+        <div
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 12,
+            padding: '10px 14px',
+            border: '1px solid var(--accent)',
+            borderRadius: 999,
+            color: 'var(--accent)',
+            fontFamily: 'var(--mono)',
+            fontSize: 11,
+            letterSpacing: '0.16em',
+            textTransform: 'uppercase',
+          }}
+        >
+          <CheckCircle size={14} />
+          Message sent
         </div>
-        <h3 className="text-xl font-semibold mb-2">Thank You!</h3>
-        <p className="text-gray-600">
-          Your message has been received. We'll get back to you shortly.
-        </p>
+        <h3
+          style={{
+            fontFamily: "'Instrument Serif', Georgia, serif",
+            fontStyle: 'italic',
+            fontSize: 32,
+            lineHeight: 1.3,
+            margin: '24px 0 8px',
+            maxWidth: 460,
+          }}
+        >
+          Thanks. We'll be in touch within{' '}
+          <span style={{ color: 'var(--accent)' }}>one business day</span>.
+        </h3>
         <button
           onClick={handleSendAnother}
-          className="mt-6 px-4 py-2 bg-pwc-orange text-white rounded-md hover:bg-[#b33f02] transition-colors"
+          style={{
+            marginTop: 24,
+            background: 'transparent',
+            color: 'var(--ink)',
+            border: '1px solid var(--line-strong)',
+            borderRadius: 999,
+            padding: '12px 22px',
+            fontSize: 13,
+            fontFamily: 'var(--sans)',
+            cursor: 'pointer',
+          }}
         >
-          Send Another Message
+          Send another message
         </button>
       </div>
     );
   }
 
   return (
-    <form onSubmit={onSubmit} noValidate className="relative space-y-4">
+    <form
+      onSubmit={onSubmit}
+      noValidate
+      style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: 18 }}
+    >
       <div>
-        <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+        <label htmlFor="name" style={LABEL_STYLE}>
           Name
         </label>
-        <input
-          id="name"
-          name="name"
-          type="text"
-          autoComplete="name"
-          placeholder="Your name"
-          className={inputClasses}
-        />
+        <input id="name" name="name" type="text" autoComplete="name" placeholder="Your name" style={FIELD_BASE} />
       </div>
 
       <div>
-        <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-          Email <span className="text-red-500">*</span>
+        <label htmlFor="email" style={LABEL_STYLE}>
+          Email <span style={{ color: 'var(--accent)' }}>*</span>
         </label>
         <input
           id="email"
@@ -98,13 +148,13 @@ export function ContactForm() {
           required
           autoComplete="email"
           placeholder="you@company.com"
-          className={inputClasses}
+          style={FIELD_BASE}
         />
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="kanz-cf-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
         <div>
-          <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="phone" style={LABEL_STYLE}>
             Phone
           </label>
           <input
@@ -112,12 +162,12 @@ export function ContactForm() {
             name="phone"
             type="tel"
             autoComplete="tel"
-            placeholder="+971 ..."
-            className={inputClasses}
+            placeholder="+971 …"
+            style={FIELD_BASE}
           />
         </div>
         <div>
-          <label htmlFor="company" className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="company" style={LABEL_STYLE}>
             Company
           </label>
           <input
@@ -126,28 +176,21 @@ export function ContactForm() {
             type="text"
             autoComplete="organization"
             placeholder="Company name"
-            className={inputClasses}
+            style={FIELD_BASE}
           />
         </div>
       </div>
 
       <div>
-        <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-1">
+        <label htmlFor="subject" style={LABEL_STYLE}>
           Subject
         </label>
-        <input
-          id="subject"
-          name="subject"
-          type="text"
-          maxLength={500}
-          placeholder="What's this about?"
-          className={inputClasses}
-        />
+        <input id="subject" name="subject" type="text" maxLength={500} placeholder="What's this about?" style={FIELD_BASE} />
       </div>
 
       <div>
-        <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-1">
-          Message <span className="text-red-500">*</span>
+        <label htmlFor="message" style={LABEL_STYLE}>
+          Message <span style={{ color: 'var(--accent)' }}>*</span>
         </label>
         <textarea
           id="message"
@@ -155,11 +198,10 @@ export function ContactForm() {
           required
           rows={5}
           placeholder="How can Kanz.ai help you?"
-          className={inputClasses}
+          style={{ ...FIELD_BASE, resize: 'vertical', minHeight: 120 }}
         />
       </div>
 
-      {/* honeypot — hidden from users, bots fill it */}
       <input
         name="website_field"
         type="text"
@@ -169,8 +211,8 @@ export function ContactForm() {
         style={{
           position: 'absolute',
           left: '-9999px',
-          width: '1px',
-          height: '1px',
+          width: 1,
+          height: 1,
           opacity: 0,
         }}
       />
@@ -178,13 +220,23 @@ export function ContactForm() {
       {state === 'error' && (
         <div
           role="alert"
-          className="flex items-start gap-2 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md p-3"
+          style={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: 10,
+            fontSize: 13,
+            color: 'var(--accent)',
+            background: 'var(--accent-soft)',
+            border: '1px solid var(--accent)',
+            borderRadius: 8,
+            padding: 12,
+          }}
         >
-          <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+          <AlertCircle size={16} style={{ marginTop: 1, flexShrink: 0 }} />
           <span>
             Sorry, something went wrong. Please try again or email contact@kanz.ai.
             {errMsg && (
-              <span className="block opacity-60 text-xs mt-1">({errMsg})</span>
+              <span style={{ display: 'block', opacity: 0.7, fontSize: 11, marginTop: 4 }}>({errMsg})</span>
             )}
           </span>
         </div>
@@ -193,17 +245,35 @@ export function ContactForm() {
       <button
         type="submit"
         disabled={state === 'sending'}
-        className="w-full inline-flex items-center justify-center px-4 py-2.5 bg-pwc-orange text-white font-medium rounded-md hover:bg-[#b33f02] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+        style={{
+          marginTop: 8,
+          background: 'var(--ink)',
+          color: 'var(--paper)',
+          padding: '16px 26px',
+          fontFamily: 'var(--sans)',
+          fontSize: 14,
+          fontWeight: 500,
+          borderRadius: 999,
+          border: 'none',
+          cursor: state === 'sending' ? 'not-allowed' : 'pointer',
+          opacity: state === 'sending' ? 0.7 : 1,
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 10,
+          alignSelf: 'flex-start',
+        }}
       >
         {state === 'sending' ? (
           'Sending…'
         ) : (
           <>
-            <Send className="h-4 w-4 mr-2" />
+            <Send size={14} />
             Send message
           </>
         )}
       </button>
+
+      <style>{`@media (max-width: 540px){.kanz-cf-row{grid-template-columns:1fr !important;}}`}</style>
     </form>
   );
 }

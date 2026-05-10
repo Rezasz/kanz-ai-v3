@@ -1,50 +1,128 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
- 
+
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 0 0% 18%;
-    --card: 0 0% 100%;
-    --card-foreground: 0 0% 18%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 18%;
-    --primary: 16 98% 41%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 0 0% 18%;
-    --secondary-foreground: 0 0% 100%;
-    --muted: 0 0% 96%;
-    --muted-foreground: 0 0% 45%;
-    --accent: 16 98% 41%;
-    --accent-foreground: 0 0% 100%;
+    /* Kanz design system — palette "ink" + typography "technical" */
+    --paper: #0E0E0C;
+    --paper-2: #1A1815;
+    --ink: #F5F1EA;
+    --ink-2: #E5DFD3;
+    --muted: #9B968E;
+    --line: rgba(245, 241, 234, 0.08);
+    --line-strong: rgba(245, 241, 234, 0.16);
+    --accent: oklch(0.78 0.18 75);
+    --accent-soft: oklch(0.78 0.18 75 / 0.14);
+    --accent-ink: oklch(0.78 0.10 220);
+    --display: 'Space Grotesk', system-ui, -apple-system, sans-serif;
+    --sans: 'Inter', system-ui, -apple-system, sans-serif;
+    --mono: 'JetBrains Mono', ui-monospace, monospace;
+    --display-weight: 500;
+    --head-style: normal;
+
+    /* shadcn HSL tokens — kept so existing Button + cva variants still work.
+       Mapped to ink palette (paper as background, ink as foreground). */
+    --background: 48 22% 5%;
+    --foreground: 39 41% 94%;
+    --card: 36 14% 9%;
+    --card-foreground: 39 41% 94%;
+    --popover: 36 14% 9%;
+    --popover-foreground: 39 41% 94%;
+    --primary: 38 80% 64%;
+    --primary-foreground: 48 22% 5%;
+    --secondary: 36 14% 9%;
+    --secondary-foreground: 39 41% 94%;
+    --muted: 36 8% 58%;
+    --muted-foreground: 36 8% 58%;
+    --accent: 38 80% 64%;
+    --accent-foreground: 48 22% 5%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-    --border: 0 0% 90%;
-    --input: 0 0% 90%;
-    --ring: 16 98% 41%;
+    --border: 39 41% 94% / 0.16;
+    --input: 39 41% 94% / 0.16;
+    --ring: 38 80% 64%;
     --radius: 0.5rem;
   }
- 
-  .dark {
-    --background: 0 0% 18%;
-    --foreground: 0 0% 100%;
-    --card: 0 0% 18%;
-    --card-foreground: 0 0% 100%;
-    --popover: 0 0% 18%;
-    --popover-foreground: 0 0% 100%;
-    --primary: 16 98% 41%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 0 0% 25%;
-    --secondary-foreground: 0 0% 100%;
-    --muted: 0 0% 25%;
-    --muted-foreground: 0 0% 65%;
-    --accent: 16 98% 41%;
-    --accent-foreground: 0 0% 100%;
-    --destructive: 0 63% 31%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 0 0% 25%;
-    --input: 0 0% 25%;
-    --ring: 16 98% 41%;
+
+  * {
+    box-sizing: border-box;
+  }
+
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+    background: var(--paper);
+    color: var(--ink);
+  }
+
+  body {
+    font-family: var(--sans);
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    overflow-x: hidden;
+  }
+
+  ::selection {
+    background: var(--ink);
+    color: var(--paper);
+  }
+
+  /* Form field reset for ink-on-paper inputs */
+  input,
+  textarea,
+  select {
+    color: inherit;
+    font-family: inherit;
+  }
+}
+
+@layer utilities {
+  .font-display {
+    font-family: var(--display);
+    font-weight: var(--display-weight);
+    font-style: var(--head-style);
+    letter-spacing: -0.02em;
+  }
+  .font-mono-accent {
+    font-family: var(--mono);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+  .text-accent-gold {
+    color: var(--accent);
+  }
+}
+
+/* Marquee + radar animations live globally so they're available everywhere */
+@keyframes kanz-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-33.3333%);
+  }
+}
+
+@keyframes kanz-radar-sweep {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes kanz-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }

@@ -1,187 +1,273 @@
-import React from 'react';
-import { motion } from 'framer-motion';
-import { Building2, Briefcase, ShoppingBag, Factory, Building as Hospital, Landmark as Government } from 'lucide-react';
+import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
+import {
+  Container,
+  DisplayHead,
+  Eyebrow,
+  GoldItalic,
+  PageCTA,
+  PageHero,
+} from '@/components/design';
+
+const INDUSTRIES = [
+  {
+    title: 'Banking & Finance',
+    glyph: 'B&F',
+    description: 'Transform financial services with AI-driven solutions.',
+    solutions: ['Risk assessment automation', 'Fraud detection systems', 'Customer service AI', 'Trading algorithms'],
+    link: '/industries/banking-finance',
+  },
+  {
+    title: 'Manufacturing',
+    glyph: 'MFG',
+    description: 'Optimize production with smart manufacturing solutions.',
+    solutions: ['Predictive maintenance', 'Quality control AI', 'Supply chain optimization', 'Production planning'],
+    link: '/industries/manufacturing',
+  },
+  {
+    title: 'Healthcare',
+    glyph: 'HLT',
+    description: 'Enhance patient care with AI-powered healthcare solutions.',
+    solutions: ['Diagnostic assistance', 'Patient monitoring', 'Treatment planning', 'Resource management'],
+    link: '/industries/healthcare',
+  },
+  {
+    title: 'Retail & E-commerce',
+    glyph: 'RTL',
+    description: 'Revolutionize retail with intelligent solutions.',
+    solutions: ['Inventory optimization', 'Personalized recommendations', 'Dynamic pricing', 'Customer analytics'],
+    link: '/industries/retail',
+  },
+  {
+    title: 'Public Sector',
+    glyph: 'PUB',
+    description: 'Modernize government services with AI.',
+    solutions: ['Citizen services automation', 'Smart city solutions', 'Policy analysis', 'Resource allocation'],
+    link: '/industries/public-sector',
+  },
+  {
+    title: 'Energy & Oil & Gas',
+    glyph: 'ENG',
+    description: 'AI-driven predictive maintenance & operational efficiency for the energy sector.',
+    solutions: ['Predictive maintenance', 'Operations efficiency', 'Risk forecasting', 'Asset optimization'],
+    link: '/industries/energy',
+  },
+];
+
+const METRICS = [
+  { value: '500+', label: 'Projects Delivered' },
+  { value: '95%', label: 'Client Satisfaction' },
+  { value: '40%', label: 'Average Cost Reduction' },
+  { value: '60%', label: 'Efficiency Increase' },
+];
+
+function IndustryCard({ title, glyph, description, solutions, link, num }: { num: number } & (typeof INDUSTRIES)[number]) {
+  const [hover, setHover] = useState(false);
+  return (
+    <Link
+      to={link}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      style={{
+        background: 'var(--paper-2)',
+        padding: '48px 48px 56px',
+        minHeight: 360,
+        borderRadius: 4,
+        position: 'relative',
+        overflow: 'hidden',
+        textDecoration: 'none',
+        color: 'var(--ink)',
+        display: 'block',
+      }}
+    >
+      <div
+        style={{
+          position: 'absolute',
+          top: 0,
+          right: 0,
+          width: 140,
+          height: 140,
+          background: hover ? 'var(--accent)' : 'var(--ink)',
+          color: 'var(--paper)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontFamily: 'var(--mono)',
+          fontSize: 20,
+          letterSpacing: '0.05em',
+          transition: 'background .25s ease',
+        }}
+      >
+        {glyph}
+      </div>
+      <div
+        style={{
+          fontFamily: 'var(--mono)',
+          fontSize: 11,
+          letterSpacing: '0.18em',
+          color: 'var(--muted)',
+          marginBottom: 32,
+        }}
+      >
+        / {String(num).padStart(2, '0')}
+      </div>
+      <h3
+        style={{
+          fontFamily: 'var(--display)',
+          fontWeight: 'var(--display-weight)' as unknown as number,
+          fontSize: 34,
+          lineHeight: 1.08,
+          letterSpacing: '-0.02em',
+          margin: '0 0 14px',
+          maxWidth: 320,
+        }}
+      >
+        {title}
+      </h3>
+      <p style={{ fontSize: 15, lineHeight: 1.55, color: 'var(--muted)', margin: '0 0 28px', maxWidth: 420 }}>
+        {description}
+      </p>
+      <ul
+        style={{
+          listStyle: 'none',
+          padding: 0,
+          margin: 0,
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gap: '10px 24px',
+          maxWidth: 480,
+        }}
+      >
+        {solutions.map((s) => (
+          <li key={s} style={{ display: 'flex', alignItems: 'baseline', gap: 10, fontSize: 13.5 }}>
+            <span
+              style={{
+                width: 4,
+                height: 4,
+                borderRadius: 999,
+                background: 'var(--accent)',
+                flexShrink: 0,
+                transform: 'translateY(-2px)',
+              }}
+            />
+            <span>{s}</span>
+          </li>
+        ))}
+      </ul>
+    </Link>
+  );
+}
 
 const Industries = () => {
   return (
-    <div className="pt-16">
-      {/* Hero Section */}
-      <section className="bg-gradient-to-r from-pwc-orange to-[#b33f02] text-white py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="text-center"
+    <div>
+      <PageHero
+        kicker="04 / Industries"
+        title="Six sectors."
+        italic="One playbook."
+        lede="Delivering AI excellence across diverse sectors with tailored solutions for industry-specific challenges across the GCC."
+        meta={['Banking', 'Manufacturing', 'Healthcare', 'Retail', 'Public Sector', 'Energy']}
+      />
+
+      <section style={{ padding: '100px 0' }}>
+        <Container>
+          <div
+            className="kanz-ind-grid"
+            style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4 }}
           >
-            <h1 className="text-4xl md:text-5xl font-bold mb-6">Industries We Serve</h1>
-            <p className="text-xl max-w-3xl mx-auto">
-              Delivering AI excellence across diverse sectors with tailored solutions for industry-specific challenges
-            </p>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Industry Grid */}
-      <section className="py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {industries.map((industry, index) => (
-              <motion.div
-                key={industry.title}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="bg-white rounded-lg shadow-md overflow-hidden"
-              >
-                <div className="relative h-48">
-                  <img
-                    src={industry.image}
-                    alt={industry.title}
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                  <div className="absolute bottom-4 left-4 text-white">
-                    <industry.icon className="h-8 w-8 mb-2" />
-                    <h3 className="text-xl font-semibold">{industry.title}</h3>
-                  </div>
-                </div>
-                <div className="p-6">
-                  <p className="text-gray-600 mb-4">{industry.description}</p>
-                  <ul className="space-y-2">
-                    {industry.solutions.map((solution, i) => (
-                      <li key={i} className="flex items-center text-gray-700">
-                        <span className="w-2 h-2 bg-orange-100 rounded-full mr-2" />
-                        {solution}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </motion.div>
+            {INDUSTRIES.map((ind, i) => (
+              <IndustryCard key={ind.title} {...ind} num={i + 1} />
             ))}
           </div>
-        </div>
+        </Container>
+        <style>{`@media (max-width: 740px){.kanz-ind-grid{grid-template-columns:1fr !important;}}`}</style>
       </section>
 
-      {/* Success Metrics */}
-      <section className="py-20 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4">Our Impact Across Industries</h2>
-            <p className="text-xl text-gray-600">Measurable results that drive business success</p>
+      <section
+        style={{
+          padding: '120px 0',
+          background: 'var(--paper-2)',
+          borderTop: '1px solid var(--line)',
+          borderBottom: '1px solid var(--line)',
+        }}
+      >
+        <Container>
+          <div
+            className="kanz-met-head"
+            style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 60, marginBottom: 80, alignItems: 'end' }}
+          >
+            <div>
+              <Eyebrow style={{ marginBottom: 24 }}>Our impact</Eyebrow>
+              <DisplayHead size="clamp(36px, 5.4vw, 80px)">
+                Measurable results <GoldItalic>across industries</GoldItalic>.
+              </DisplayHead>
+            </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {metrics.map((metric, index) => (
-              <motion.div
-                key={metric.label}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="bg-white rounded-lg shadow-md p-6 text-center"
+          <div
+            className="kanz-met-grid"
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(4, 1fr)',
+              gap: 0,
+              borderTop: '1px solid var(--line-strong)',
+            }}
+          >
+            {METRICS.map((m, i) => (
+              <div
+                key={m.label}
+                style={{
+                  padding: '40px 24px 0 0',
+                  borderRight: i < 3 ? '1px solid var(--line)' : 'none',
+                  paddingLeft: i === 0 ? 0 : 24,
+                }}
               >
-                <div className="text-3xl font-bold text-pwc-orange mb-2">{metric.value}</div>
-                <div className="text-gray-600">{metric.label}</div>
-              </motion.div>
+                <div
+                  style={{
+                    fontFamily: 'var(--display)',
+                    fontWeight: 'var(--display-weight)' as unknown as number,
+                    fontSize: 'clamp(48px, 6vw, 84px)',
+                    lineHeight: 1,
+                    letterSpacing: '-0.04em',
+                    margin: 0,
+                    color: 'var(--accent)',
+                  }}
+                >
+                  {m.value}
+                </div>
+                <div
+                  style={{
+                    fontFamily: 'var(--mono)',
+                    fontSize: 12,
+                    letterSpacing: '0.16em',
+                    textTransform: 'uppercase',
+                    color: 'var(--muted)',
+                    marginTop: 16,
+                  }}
+                >
+                  {m.label}
+                </div>
+              </div>
             ))}
           </div>
-        </div>
+        </Container>
+        <style>{`
+          @media (max-width: 900px) {
+            .kanz-met-head { grid-template-columns: 1fr !important; }
+            .kanz-met-grid { grid-template-columns: 1fr 1fr !important; }
+          }
+        `}</style>
       </section>
+
+      <PageCTA
+        kicker="Sector-specific"
+        title="Don't see your"
+        italic="sector?"
+        body="The frameworks travel. We've adapted them to telecom, aviation, and more. Tell us about your sector and the constraints you operate under."
+        primary={{ label: 'Talk to us', to: '/contact' }}
+        secondary={{ label: 'See services', to: '/services' }}
+      />
     </div>
   );
 };
-
-const industries = [
-  {
-    title: "Banking & Finance",
-    description: "Transform financial services with AI-driven solutions",
-    icon: Building2,
-    image: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&w=800&q=80",
-    solutions: [
-      "Risk assessment automation",
-      "Fraud detection systems",
-      "Customer service AI",
-      "Trading algorithms"
-    ]
-  },
-  {
-    title: "Manufacturing",
-    description: "Optimize production with smart manufacturing solutions",
-    icon: Factory,
-    image: "https://images.unsplash.com/photo-1587440871875-191322ee64b0?auto=format&fit=crop&w=800&q=80",
-    solutions: [
-      "Predictive maintenance",
-      "Quality control AI",
-      "Supply chain optimization",
-      "Production planning"
-    ]
-  },
-  {
-    title: "Healthcare",
-    description: "Enhance patient care with AI-powered healthcare solutions",
-    icon: Hospital,
-    image: "https://images.unsplash.com/photo-1516549655169-df83a0774514?auto=format&fit=crop&w=800&q=80",
-    solutions: [
-      "Diagnostic assistance",
-      "Patient monitoring",
-      "Treatment planning",
-      "Resource management"
-    ]
-  },
-  {
-    title: "Retail & E-commerce",
-    description: "Revolutionize retail with intelligent solutions",
-    icon: ShoppingBag,
-    image: "https://images.unsplash.com/photo-1472851294608-062f824d29cc?auto=format&fit=crop&w=800&q=80",
-    solutions: [
-      "Inventory optimization",
-      "Personalized recommendations",
-      "Dynamic pricing",
-      "Customer analytics"
-    ]
-  },
-  {
-    title: "Public Sector",
-    description: "Modernize government services with AI",
-    icon: Government,
-    image: "https://images.unsplash.com/photo-1523292562811-8fa7962a78c8?auto=format&fit=crop&w=800&q=80",
-    solutions: [
-      "Citizen services automation",
-      "Smart city solutions",
-      "Policy analysis",
-      "Resource allocation"
-    ]
-  },
-  {
-    title: "Insurance",
-    description: "Transform insurance with AI-powered solutions",
-    icon: Briefcase,
-    image: "https://images.unsplash.com/photo-1450101499163-c8848c66ca85?auto=format&fit=crop&w=800&q=80",
-    solutions: [
-      "Risk assessment",
-      "Claims processing",
-      "Fraud detection",
-      "Customer service"
-    ]
-  }
-];
-
-const metrics = [
-  {
-    value: "500+",
-    label: "Projects Delivered"
-  },
-  {
-    value: "95%",
-    label: "Client Satisfaction"
-  },
-  {
-    value: "40%",
-    label: "Average Cost Reduction"
-  },
-  {
-    value: "60%",
-    label: "Efficiency Increase"
-  }
-];
 
 export default Industries;

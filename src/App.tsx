@@ -44,9 +44,9 @@ import EconomicsOfAI from './pages/insights/EconomicsOfAI';
 function App() {
   return (
     <Router>
-      <div className="flex flex-col min-h-screen">
+      <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: 'var(--paper)' }}>
         <Navbar />
-        <main className="flex-grow pt-16">
+        <main style={{ flexGrow: 1 }}>
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/about" element={<About />} />

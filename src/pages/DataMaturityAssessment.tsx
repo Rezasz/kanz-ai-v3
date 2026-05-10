@@ -378,13 +378,13 @@ const DataMaturityAssessment = () => {
         {
           label: 'Maturity Score',
           data: scores.dimensions.map(d => Math.round(d.score)),
-          backgroundColor: 'rgba(208, 74, 2, 0.2)',
-          borderColor: 'rgba(208, 74, 2, 1)',
+          backgroundColor: 'rgba(242, 178, 90, 0.22)',
+          borderColor: 'rgba(242, 178, 90, 1)',
           borderWidth: 2,
-          pointBackgroundColor: 'rgba(208, 74, 2, 1)',
+          pointBackgroundColor: 'rgba(242, 178, 90, 1)',
           pointBorderColor: '#fff',
           pointHoverBackgroundColor: '#fff',
-          pointHoverBorderColor: 'rgba(208, 74, 2, 1)'
+          pointHoverBorderColor: 'rgba(242, 178, 90, 1)'
         }
       ]
     };
@@ -392,20 +392,23 @@ const DataMaturityAssessment = () => {
     const options = {
       scales: {
         r: {
-          angleLines: {
-            display: true
-          },
+          angleLines: { display: true, color: 'rgba(245, 241, 234, 0.16)' },
+          grid: { color: 'rgba(245, 241, 234, 0.10)' },
           suggestedMin: 0,
           suggestedMax: 100,
           ticks: {
-            stepSize: 20
-          }
+            stepSize: 20,
+            color: 'rgba(245, 241, 234, 0.55)',
+            backdropColor: 'transparent',
+          },
+          pointLabels: {
+            color: 'rgba(245, 241, 234, 0.85)',
+            font: { family: 'JetBrains Mono', size: 11 },
+          },
         }
       },
       plugins: {
-        legend: {
-          display: false
-        }
+        legend: { display: false }
       }
     };
 

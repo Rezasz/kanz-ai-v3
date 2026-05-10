@@ -40,15 +40,38 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        // Kanz ink palette — driven by CSS vars in index.css
+        paper: 'var(--paper)',
+        'paper-2': 'var(--paper-2)',
+        ink: 'var(--ink)',
+        'ink-2': 'var(--ink-2)',
+        kmuted: 'var(--muted)',
+        line: 'var(--line)',
+        'line-strong': 'var(--line-strong)',
+        gold: 'var(--accent)',
+        'gold-soft': 'var(--accent-soft)',
+        'gold-ink': 'var(--accent-ink)',
+        // Legacy PwC names redirected to the new palette so any unconverted
+        // utility classes (text-pwc-orange, bg-pwc-gray) still render coherently
         pwc: {
-          orange: '#d04a02',
-          gray: '#2d2d2d',
-        }
+          orange: 'var(--accent)',
+          gray: 'var(--paper-2)',
+        },
+      },
+      fontFamily: {
+        display: ['var(--display)', 'system-ui', 'sans-serif'],
+        sans: ['var(--sans)', 'system-ui', 'sans-serif'],
+        mono: ['var(--mono)', 'ui-monospace', 'monospace'],
       },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+      },
+      animation: {
+        marquee: 'kanz-marquee 60s linear infinite',
+        'radar-sweep': 'kanz-radar-sweep 18s linear infinite',
+        'fade-up': 'kanz-fade-up 0.8s ease forwards',
       },
     },
   },

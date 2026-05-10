@@ -1,0 +1,164 @@
+/* Legacy Tailwind overrides — translates "light mode" utility classes used in
+   detail pages to fit the ink (dark) palette without rewriting each page.
+   Higher specificity than Tailwind utilities so these win. */
+
+/* Detail pages set `pt-16` (64px) assuming a fixed-height nav. The new overlay
+   nav is roughly 68px at rest; bump the offset so hero content clears the nav
+   on first paint without leaving a too-large gap. */
+:where(body) .pt-16 {
+  padding-top: 80px !important;
+}
+
+/* Card / page surfaces — bg-white & bg-gray-50 become dark slabs */
+:where(body) .bg-white {
+  background-color: var(--paper-2) !important;
+  color: var(--ink);
+}
+:where(body) .bg-gray-50,
+:where(body) .bg-gray-100 {
+  background-color: var(--paper-2) !important;
+  color: var(--ink);
+}
+:where(body) .bg-gray-900,
+:where(body) .bg-gray-800 {
+  background-color: var(--paper) !important;
+  color: var(--ink);
+}
+
+/* Text colors — neutral grays remap to ink/muted tones */
+:where(body) .text-gray-900,
+:where(body) .text-gray-800 {
+  color: var(--ink) !important;
+}
+:where(body) .text-gray-700,
+:where(body) .text-gray-600 {
+  color: var(--ink-2) !important;
+}
+:where(body) .text-gray-500,
+:where(body) .text-gray-400,
+:where(body) .text-gray-300 {
+  color: var(--muted) !important;
+}
+
+/* Borders */
+:where(body) .border-gray-100,
+:where(body) .border-gray-200,
+:where(body) .border-gray-300 {
+  border-color: var(--line-strong) !important;
+}
+:where(body) .border-gray-800 {
+  border-color: var(--line-strong) !important;
+}
+
+/* Soft accent backgrounds (icon haloes) */
+:where(body) .bg-orange-100 {
+  background-color: var(--accent-soft) !important;
+}
+:where(body) .bg-orange-50 {
+  background-color: color-mix(in oklab, var(--accent) 8%, transparent) !important;
+}
+
+/* Shadows — convert heavy drop-shadows to subtle borders for the dark surface */
+:where(body) .shadow-sm,
+:where(body) .shadow,
+:where(body) .shadow-md,
+:where(body) .shadow-lg,
+:where(body) .shadow-xl,
+:where(body) .shadow-2xl {
+  box-shadow: none !important;
+  border: 1px solid var(--line-strong);
+}
+/* Hover shadow utilities */
+:where(body) .hover\:shadow-md:hover,
+:where(body) .hover\:shadow-lg:hover,
+:where(body) .hover\:shadow-xl:hover {
+  box-shadow: 0 0 0 1px var(--accent) !important;
+}
+
+/* Form fields used in detail pages */
+:where(body) input.border-gray-300,
+:where(body) textarea.border-gray-300,
+:where(body) select.border-gray-300,
+:where(body) input.bg-white,
+:where(body) textarea.bg-white,
+:where(body) select.bg-white {
+  background-color: var(--paper-2) !important;
+  color: var(--ink) !important;
+  border-color: var(--line-strong) !important;
+}
+
+/* Section headers using pwc-orange/gray text gradient — repurpose as accent */
+:where(body) .text-pwc-gray {
+  color: var(--ink) !important;
+}
+
+/* Buttons used by detail pages — shadcn default styles still work via HSL vars,
+   but a few hand-rolled "bg-white text-pwc-orange" CTA buttons need to remain
+   high-contrast. */
+:where(body) button.bg-white,
+:where(body) a.bg-white {
+  background-color: var(--ink) !important;
+  color: var(--paper) !important;
+  border: none !important;
+}
+:where(body) button.bg-white:hover,
+:where(body) a.bg-white:hover {
+  background-color: var(--accent) !important;
+}
+
+/* Orange hero gradients used across detail pages: convert from a flat orange
+   slab to the dark paper + warm gold accent line aesthetic. */
+:where(body) .bg-gradient-to-r.from-pwc-orange,
+:where(body) [class*="from-pwc-orange"] {
+  background: var(--paper) !important;
+  background-image:
+    radial-gradient(circle at 80% -10%, color-mix(in oklab, var(--accent) 22%, transparent) 0%, transparent 55%),
+    linear-gradient(180deg, var(--paper) 0%, var(--paper-2) 100%) !important;
+  color: var(--ink) !important;
+  border-bottom: 1px solid var(--line-strong);
+  position: relative;
+}
+:where(body) .bg-gradient-to-r.from-pwc-orange::after,
+:where(body) [class*="from-pwc-orange"]::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  opacity: 0.6;
+  pointer-events: none;
+}
+:where(body) .bg-gradient-to-r.from-pwc-orange .text-white,
+:where(body) [class*="from-pwc-orange"] .text-white,
+:where(body) .bg-gradient-to-r.from-pwc-orange.text-white,
+:where(body) [class*="from-pwc-orange"].text-white {
+  color: var(--ink) !important;
+}
+:where(body) .bg-gradient-to-r.from-pwc-orange h1,
+:where(body) [class*="from-pwc-orange"] h1 {
+  font-family: var(--display);
+  font-weight: var(--display-weight);
+  letter-spacing: -0.025em;
+}
+
+/* Section that uses bg-pwc-gray for dark slab — now uses paper-2 */
+:where(body) .bg-pwc-gray {
+  background-color: var(--paper-2) !important;
+  color: var(--ink) !important;
+}
+:where(body) .bg-pwc-gray .text-white,
+:where(body) .bg-pwc-gray.text-white {
+  color: var(--ink) !important;
+}
+
+/* Default white text outside hero/dark sections shouldn't blast against light
+   surfaces — but bg-white surfaces are now dark, so text-white is still OK.
+   Just keep it readable. */
+
+/* Pretty up images that have rounded-lg + shadow — give them an outline */
+:where(body) img.rounded-lg,
+:where(body) img.rounded-md {
+  border: 1px solid var(--line-strong);
+}
