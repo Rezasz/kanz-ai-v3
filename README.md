@@ -91,10 +91,10 @@ vercel.json                    SPA rewrite — every path → /index.html
 
 ## Environment variables
 
-Optional — only needed if you want to override the OmniInbox shared values
-baked into `src/lib/omniinbox.ts` (e.g. to rotate the token without a code
-push). Set in **Vercel → Project Settings → Environment Variables** for
-production, or in `.env.local` for local dev (gitignored).
+The OmniInbox shared values are baked into `src/lib/omniinbox.ts` as
+fallbacks, so the form works without any env-var setup. Override them via
+**Vercel → Project Settings → Environment Variables** in production, or in
+`.env.local` for local dev (gitignored).
 
 ```env
 # Base URL only — the helper appends /public/contact-form.
@@ -103,7 +103,10 @@ VITE_OMNIINBOX_TOKEN=omni-shared-...
 VITE_OMNIINBOX_SLUG=kanz-ai
 ```
 
-See `.env.example` for the template.
+See `.env.example` for the template. When the OmniInbox operator rotates
+the token, **update both** the Vercel env var and the bundled fallback in
+`src/lib/omniinbox.ts` — see HANDOFF.md → "Token rotation" for the full
+checklist and the failure mode if you only update one.
 
 ## Deployment
 

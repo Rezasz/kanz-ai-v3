@@ -7,6 +7,8 @@ isn't obvious from reading the code.
 
 | Commit | Change |
 |---|---|
+| `8fddac7` | Rotate OmniInbox token (old one returned 401) and tolerate base-URL or full-path `VITE_OMNIINBOX_ENDPOINT` |
+| `3ac6de8` | Add README and HANDOFF docs |
 | `a1b0a74` | Refactor contact form to OmniInbox reference pattern (helper + reusable component + env vars) |
 | `cd87b99` | Add `vercel.json` SPA rewrite — fixes 404 on direct URLs like `/insights` |
 | `e779523` | Add AI Risk Self-Assessment (`/ai-risk-assessment`, 35 + 3 questions, banded scoring, radar) |
@@ -39,14 +41,23 @@ Expect new rows within ~1 second of submission, `status` flips to
 
 ### Token rotation
 
-1. In Vercel → kanz-ai-v3 project → Settings → Environment Variables, set:
-   - `VITE_OMNIINBOX_TOKEN=<new-token>`
-2. Redeploy (Vercel Dashboard → Deployments → ⋯ → Redeploy, or push any commit).
-3. Verify with the curl test in the README.
+The token lives in two places and **both must be updated together**, otherwise a
+missing or stale Vercel env var silently falls back to a dead bundled token and
+every submission returns 401 (this is exactly what happened before commit
+`8fddac7`).
 
-The hardcoded fallback in `src/lib/omniinbox.ts` will remain as a safety
-net — the env var takes precedence. To remove the fallback entirely, edit
-`src/lib/omniinbox.ts` and drop the `||` defaults.
+1. In Vercel → kanz-ai-v3 → Settings → Environment Variables, set:
+   - `VITE_OMNIINBOX_TOKEN=<new-token>`
+2. Edit `src/lib/omniinbox.ts` and replace the fallback string in the `TOKEN`
+   constant with `<new-token>`. Commit and push.
+3. Pushing to `main` triggers a Vercel auto-deploy. Verify with the curl test
+   in the README, then submit a real form and watch the OmniInbox DB
+   (see "Verify a real browser submission landed" above).
+
+To remove the bundled fallback entirely (env-var-only mode), drop the `||`
+defaults in `src/lib/omniinbox.ts`. Costs you graceful degradation when the env
+var is missing; gains you "no stale token in the bundle" — pick the trade-off
+that fits how you operate.
 
 ### Adding a new form (e.g. /book-demo, /partnership)
 
