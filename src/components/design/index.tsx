@@ -482,27 +482,29 @@ export function MarqueeStrip({ items }: { items: string[] }) {
 }
 
 export function HeroBackdrop() {
-  const ref = useRef<SVGSVGElement | null>(null);
+  // Square viewBox; rotation is around its center (600,600). The SVG itself
+  // is sized as a square via aspect-ratio + width:min(...) and positioned
+  // absolutely so it stays a true circle regardless of section height. This
+  // avoids the "wedge orbits off-screen" effect that xMidYMid slice produces
+  // when the hero section is taller than wide.
+  const ref = useRef<SVGGElement | null>(null);
   useEffect(() => {
     let raf = 0;
     let angle = 0;
     let last = performance.now();
-    // ~50 degrees per second → one revolution every ~7.2 seconds.
-    // Steady continuous rotation, like a real radar display.
     const DEG_PER_SEC = 50;
     const tick = (now: number) => {
       const dt = (now - last) / 1000;
       last = now;
       angle = (angle + DEG_PER_SEC * dt) % 360;
-      const sweep = ref.current?.querySelector('.sweep') as SVGGElement | null;
-      if (sweep) sweep.setAttribute('transform', `rotate(${angle} 600 600)`);
+      if (ref.current) ref.current.setAttribute('transform', `rotate(${angle} 600 600)`);
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
   }, []);
 
-  const dots = [];
+  const dots: React.ReactElement[] = [];
   for (let i = 0; i < 24; i++) {
     for (let j = 0; j < 24; j++) {
       const x = i * 50 + 25;
@@ -517,80 +519,78 @@ export function HeroBackdrop() {
     }
   }
 
-  // Radar sweep — a 90° wedge that trails behind the leading beam.
-  // Leading edge sits at angle 0° (east, +x). The arc connects to the
-  // trailing edge at -90° (north, -y). Linear gradient runs along the
-  // bisector so the leading edge is bright accent and the tail fades out.
+  // 90° trailing wedge: leading edge at 0° (east), trail at -90° (north).
   const R = 560;
-  const lead = { x: 600 + R, y: 600 }; // 0°
-  const trail = { x: 600, y: 600 - R }; // -90°
+  const lead = { x: 600 + R, y: 600 };
+  const trail = { x: 600, y: 600 - R };
   const wedgePath = `M 600 600 L ${lead.x} ${lead.y} A ${R} ${R} 0 0 0 ${trail.x} ${trail.y} Z`;
 
   return (
-    <svg
-      ref={ref}
-      viewBox="0 0 1200 1200"
-      preserveAspectRatio="xMidYMid slice"
+    <div
+      aria-hidden
       style={{
         position: 'absolute',
-        inset: 0,
-        width: '100%',
-        height: '100%',
+        // Anchor the radar to the visible hero area, not the whole section.
+        // Top-50% / left-50% with translate centers a square that's the
+        // smaller of viewport-min(80vmin) and 1100px — the rotation point
+        // then matches the visible center exactly.
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        width: 'min(110vmin, 1100px)',
+        height: 'min(110vmin, 1100px)',
         color: 'var(--ink)',
-        opacity: 0.6,
+        opacity: 0.65,
         pointerEvents: 'none',
       }}
-      aria-hidden
     >
-      <defs>
-        <radialGradient id="vfade" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="var(--accent)" stopOpacity="0.10" />
-          <stop offset="60%" stopColor="var(--accent)" stopOpacity="0" />
-        </radialGradient>
-        {/* Gradient vector from a point near the leading edge (bright) to a
-            point near the trailing edge (transparent), so the trail fades. */}
-        <linearGradient
-          id="sweepGrad"
-          gradientUnits="userSpaceOnUse"
-          x1={600 + R * 0.7}
-          y1="600"
-          x2="600"
-          y2={600 - R * 0.7}
-        >
-          <stop offset="0%" stopColor="var(--accent)" stopOpacity="0.55" />
-          <stop offset="55%" stopColor="var(--accent)" stopOpacity="0.18" />
-          <stop offset="100%" stopColor="var(--accent)" stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      <rect width="1200" height="1200" fill="url(#vfade)" />
-      {dots}
-      <g fill="none" stroke="currentColor" strokeWidth="0.5" opacity="0.3">
-        <circle cx="600" cy="600" r="180" />
-        <circle cx="600" cy="600" r="280" />
-        <circle cx="600" cy="600" r="380" />
-        <circle cx="600" cy="600" r="480" />
-        <circle cx="600" cy="600" r="560" />
-      </g>
-      {/* radar cross-hairs — subtle, fixed */}
-      <g stroke="currentColor" strokeWidth="0.4" opacity="0.18">
-        <line x1="40" y1="600" x2="1160" y2="600" />
-        <line x1="600" y1="40" x2="600" y2="1160" />
-      </g>
-      <g className="sweep" style={{ transformOrigin: '600px 600px' }}>
-        <path d={wedgePath} fill="url(#sweepGrad)" />
-        {/* leading beam — bright radial line at the front of the sweep */}
-        <line
-          x1="600"
-          y1="600"
-          x2={lead.x}
-          y2={lead.y}
-          stroke="var(--accent)"
-          strokeWidth="1.4"
-          opacity="0.95"
-        />
-      </g>
-      <circle cx="600" cy="600" r="3" fill="var(--accent)" />
-    </svg>
+      <svg viewBox="0 0 1200 1200" width="100%" height="100%">
+        <defs>
+          <radialGradient id="vfade" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="var(--accent)" stopOpacity="0.10" />
+            <stop offset="60%" stopColor="var(--accent)" stopOpacity="0" />
+          </radialGradient>
+          <linearGradient
+            id="sweepGrad"
+            gradientUnits="userSpaceOnUse"
+            x1={600 + R * 0.7}
+            y1="600"
+            x2="600"
+            y2={600 - R * 0.7}
+          >
+            <stop offset="0%" stopColor="var(--accent)" stopOpacity="0.55" />
+            <stop offset="55%" stopColor="var(--accent)" stopOpacity="0.18" />
+            <stop offset="100%" stopColor="var(--accent)" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <circle cx="600" cy="600" r="560" fill="url(#vfade)" />
+        {dots}
+        <g fill="none" stroke="currentColor" strokeWidth="0.5" opacity="0.3">
+          <circle cx="600" cy="600" r="180" />
+          <circle cx="600" cy="600" r="280" />
+          <circle cx="600" cy="600" r="380" />
+          <circle cx="600" cy="600" r="480" />
+          <circle cx="600" cy="600" r="560" />
+        </g>
+        <g stroke="currentColor" strokeWidth="0.4" opacity="0.18">
+          <line x1="40" y1="600" x2="1160" y2="600" />
+          <line x1="600" y1="40" x2="600" y2="1160" />
+        </g>
+        <g ref={ref}>
+          <path d={wedgePath} fill="url(#sweepGrad)" />
+          <line
+            x1="600"
+            y1="600"
+            x2={lead.x}
+            y2={lead.y}
+            stroke="var(--accent)"
+            strokeWidth="1.4"
+            opacity="0.95"
+          />
+        </g>
+        <circle cx="600" cy="600" r="3" fill="var(--accent)" />
+      </svg>
+    </div>
   );
 }
 
