@@ -175,14 +175,24 @@ const Footer = () => {
           }}
         >
           <div>© {new Date().getFullYear()} KANZ.AI — ALL RIGHTS RESERVED</div>
-          <div style={{ display: 'flex', gap: 28, flexWrap: 'wrap' }}>
-            <Link to="/contact" style={{ color: 'inherit', textDecoration: 'none' }}>
+          <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
+            <Link to="/disclaimer" className="kanz-footer-link" style={{ color: 'inherit', textDecoration: 'none' }}>
+              DISCLAIMER
+            </Link>
+            <Link to="/cookie-policy" className="kanz-footer-link" style={{ color: 'inherit', textDecoration: 'none' }}>
+              COOKIE POLICY
+            </Link>
+            <Link to="/contact" className="kanz-footer-link" style={{ color: 'inherit', textDecoration: 'none' }}>
               CONTACT
             </Link>
-            <Link to="/assess" style={{ color: 'inherit', textDecoration: 'none' }}>
+            <Link to="/assess" className="kanz-footer-link" style={{ color: 'inherit', textDecoration: 'none' }}>
               ASSESSMENTS
             </Link>
-            <a href="tel:+97142327866" style={{ color: 'inherit', textDecoration: 'none' }}>
+            <a
+              href="tel:+97142327866"
+              className="kanz-footer-link"
+              style={{ color: 'inherit', textDecoration: 'none' }}
+            >
               +971 4 232 7866
             </a>
           </div>

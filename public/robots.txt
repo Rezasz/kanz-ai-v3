@@ -1,0 +1,21 @@
+# https://www.kanz.ai — robots.txt
+# Allow well-behaved crawlers to index everything.
+
+User-agent: *
+Allow: /
+
+# AI training crawlers — explicit (no opinion yet, allow by default; flip to
+# Disallow: / under each agent if you want to opt out later).
+User-agent: GPTBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+Sitemap: https://www.kanz.ai/sitemap.xml
