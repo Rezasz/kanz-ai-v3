@@ -36,7 +36,10 @@
     --head-style: normal;
 
     /* shadcn HSL tokens — kept so existing Button + cva variants still work.
-       Mapped to ink palette (paper as background, ink as foreground). */
+       Mapped to ink palette. Note: --muted-hsl and --accent-hsl are renamed
+       from the shadcn defaults (--muted, --accent) so they don't shadow the
+       brand color vars defined above; the tailwind config wraps them in
+       hsl() for the shadcn-style utilities. */
     --background: 48 22% 5%;
     --foreground: 39 41% 94%;
     --card: 36 14% 9%;
@@ -47,9 +50,9 @@
     --primary-foreground: 48 22% 5%;
     --secondary: 36 14% 9%;
     --secondary-foreground: 39 41% 94%;
-    --muted: 36 8% 58%;
+    --muted-hsl: 36 8% 58%;
     --muted-foreground: 36 8% 58%;
-    --accent: 35 90% 55%;
+    --accent-hsl: 35 90% 55%;
     --accent-foreground: 48 22% 5%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
