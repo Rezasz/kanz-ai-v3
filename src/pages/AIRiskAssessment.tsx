@@ -410,13 +410,13 @@ const AIRiskAssessment = () => {
         {
           label: 'Domain Risk Score',
           data: DOMAINS.map((d) => byDomain[d]),
-          backgroundColor: 'rgba(242, 178, 90, 0.22)',
-          borderColor: 'rgba(242, 178, 90, 1)',
+          backgroundColor: 'rgba(237, 156, 49, 0.24)',
+          borderColor: 'rgba(237, 156, 49, 1)',
           borderWidth: 2,
-          pointBackgroundColor: 'rgba(242, 178, 90, 1)',
+          pointBackgroundColor: 'rgba(237, 156, 49, 1)',
           pointBorderColor: '#fff',
           pointHoverBackgroundColor: '#fff',
-          pointHoverBorderColor: 'rgba(242, 178, 90, 1)',
+          pointHoverBorderColor: 'rgba(237, 156, 49, 1)',
         },
       ],
     };

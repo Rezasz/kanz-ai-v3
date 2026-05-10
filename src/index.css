@@ -4,17 +4,31 @@
 
 @layer base {
   :root {
-    /* Kanz design system — palette "ink" + typography "technical" */
-    --paper: #0E0E0C;
-    --paper-2: #1A1815;
+    /* Kanz design system — palette "ink" + typography "technical".
+       Per the brand PDF, the site alternates between dark slabs (paper) and
+       cream inverse slabs (paper-light). Accent is a saturated amber-orange. */
+    --paper: #0A0A09;
+    --paper-2: #15140F;
     --ink: #F5F1EA;
     --ink-2: #E5DFD3;
     --muted: #9B968E;
     --line: rgba(245, 241, 234, 0.08);
     --line-strong: rgba(245, 241, 234, 0.16);
-    --accent: oklch(0.78 0.18 75);
-    --accent-soft: oklch(0.78 0.18 75 / 0.14);
-    --accent-ink: oklch(0.78 0.10 220);
+
+    /* Inverse (light) surface used by signature sections: UAE Pride, the
+       capabilities thesis, the featured whitepaper card, the active framework
+       row. Dark ink on warm cream + the same accent. */
+    --paper-light: #F5F1EA;
+    --paper-light-2: #EBE5DA;
+    --ink-on-light: #0E0E0C;
+    --ink-2-on-light: #2A2722;
+    --muted-on-light: #6B655D;
+    --line-on-light: rgba(14, 14, 12, 0.08);
+    --line-strong-on-light: rgba(14, 14, 12, 0.16);
+
+    --accent: oklch(0.74 0.19 65);
+    --accent-soft: oklch(0.74 0.19 65 / 0.14);
+    --accent-ink: oklch(0.74 0.10 220);
     --display: 'Space Grotesk', system-ui, -apple-system, sans-serif;
     --sans: 'Inter', system-ui, -apple-system, sans-serif;
     --mono: 'JetBrains Mono', ui-monospace, monospace;
@@ -29,19 +43,19 @@
     --card-foreground: 39 41% 94%;
     --popover: 36 14% 9%;
     --popover-foreground: 39 41% 94%;
-    --primary: 38 80% 64%;
+    --primary: 35 90% 55%;
     --primary-foreground: 48 22% 5%;
     --secondary: 36 14% 9%;
     --secondary-foreground: 39 41% 94%;
     --muted: 36 8% 58%;
     --muted-foreground: 36 8% 58%;
-    --accent: 38 80% 64%;
+    --accent: 35 90% 55%;
     --accent-foreground: 48 22% 5%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
     --border: 39 41% 94% / 0.16;
     --input: 39 41% 94% / 0.16;
-    --ring: 38 80% 64%;
+    --ring: 35 90% 55%;
     --radius: 0.5rem;
   }
 

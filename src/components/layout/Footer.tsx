@@ -120,8 +120,20 @@ const Footer = () => {
                   textTransform: 'uppercase',
                   color: 'var(--muted)',
                   marginBottom: 18,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
                 }}
               >
+                <span
+                  style={{
+                    width: 5,
+                    height: 5,
+                    borderRadius: '50%',
+                    background: 'var(--accent)',
+                    flexShrink: 0,
+                  }}
+                />
                 {c.h}
               </div>
               <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -129,11 +141,13 @@ const Footer = () => {
                   <li key={label}>
                     <Link
                       to={path}
+                      className="kanz-footer-link"
                       style={{
                         color: 'var(--ink)',
                         opacity: 0.85,
                         textDecoration: 'none',
                         fontSize: 13.5,
+                        transition: 'color .2s ease, opacity .2s ease',
                       }}
                     >
                       {label}
@@ -176,6 +190,10 @@ const Footer = () => {
       </Container>
 
       <style>{`
+        .kanz-footer-link:hover {
+          color: var(--accent) !important;
+          opacity: 1 !important;
+        }
         .kanz-footer-grid {
           display: grid;
           grid-template-columns: 1.4fr repeat(4, 1fr);

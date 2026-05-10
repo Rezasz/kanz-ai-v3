@@ -180,19 +180,7 @@ function Hero() {
       <Container style={{ position: 'relative', paddingTop: 60, paddingBottom: 80 }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 40, maxWidth: 1240 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', flexWrap: 'wrap', gap: 16 }}>
-            <Eyebrow>
-              <span
-                style={{
-                  display: 'inline-block',
-                  width: 6,
-                  height: 6,
-                  borderRadius: '50%',
-                  background: 'var(--accent)',
-                  marginRight: 4,
-                }}
-              />
-              Kanz.ai — AI &amp; Digital Transformation
-            </Eyebrow>
+            <Eyebrow>Kanz.ai — AI &amp; Digital Transformation</Eyebrow>
             <div style={{ fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: '0.14em', color: 'var(--muted)' }}>
               702 OPAL TOWER · BUSINESS BAY · DUBAI
             </div>
@@ -233,7 +221,7 @@ function Hero() {
             </p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14, alignItems: 'flex-start' }}>
-              <ArrowLink to="/services" primary>
+              <ArrowLink to="/services" dark>
                 Get Started
               </ArrowLink>
               <ArrowLink to="/assess">Assess Your Organization</ArrowLink>
@@ -333,9 +321,9 @@ function MaturityVisual() {
                     gridTemplateColumns: '54px 1fr auto',
                     gap: 16,
                     padding: '18px 20px',
-                    background: i === active ? 'var(--ink)' : 'transparent',
-                    color: i === active ? 'var(--paper)' : 'var(--ink)',
-                    border: `1px solid ${i === active ? 'var(--ink)' : 'var(--line-strong)'}`,
+                    background: i === active ? 'var(--paper-light)' : 'transparent',
+                    color: i === active ? 'var(--ink-on-light)' : 'var(--ink)',
+                    border: `1px solid ${i === active ? 'var(--paper-light)' : 'var(--line-strong)'}`,
                     borderRadius: 14,
                     cursor: 'pointer',
                     textAlign: 'left',
@@ -572,26 +560,25 @@ function Thesis() {
     <section
       style={{
         padding: '120px 0',
-        background: 'var(--paper-2)',
-        color: 'var(--ink)',
+        background: 'var(--paper-light)',
+        color: 'var(--ink-on-light)',
         position: 'relative',
         overflow: 'hidden',
-        borderTop: '1px solid var(--line)',
-        borderBottom: '1px solid var(--line)',
       }}
     >
       <Container>
-        <Eyebrow>Our Capabilities</Eyebrow>
+        <Eyebrow style={{ color: 'var(--muted-on-light)' }}>Our Capabilities</Eyebrow>
         <p
           style={{
-            fontFamily: "'Instrument Serif', Georgia, serif",
+            fontFamily: 'var(--display)',
+            fontWeight: 'var(--display-weight)' as unknown as number,
             fontStyle: 'italic',
             fontSize: 'clamp(28px, 4.2vw, 58px)',
             lineHeight: 1.2,
             letterSpacing: '-0.01em',
             margin: '32px 0 0',
             maxWidth: 1200,
-            color: 'var(--ink)',
+            color: 'var(--ink-on-light)',
           }}
         >
           We bring together deep industry expertise, cutting-edge technological capabilities, and a proven track record of
@@ -603,7 +590,7 @@ function Thesis() {
           style={{
             marginTop: 80,
             paddingTop: 40,
-            borderTop: '1px solid var(--line-strong)',
+            borderTop: '1px solid var(--line-strong-on-light)',
             display: 'grid',
             gridTemplateColumns: 'repeat(4, 1fr)',
             gap: 20,
@@ -616,11 +603,11 @@ function Thesis() {
               style={{
                 fontSize: 14,
                 lineHeight: 1.45,
-                opacity: 0.9,
                 padding: '16px 0',
                 display: 'flex',
                 gap: 12,
                 alignItems: 'flex-start',
+                color: 'var(--ink-on-light)',
               }}
             >
               <span
@@ -773,23 +760,22 @@ function UAEPride() {
         padding: '140px 0',
         position: 'relative',
         overflow: 'hidden',
-        background: 'var(--paper-2)',
-        color: 'var(--ink)',
-        borderTop: '1px solid var(--line)',
+        background: 'var(--paper-light)',
+        color: 'var(--ink-on-light)',
       }}
     >
       <svg
-        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0.18, pointerEvents: 'none' }}
+        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0.4, pointerEvents: 'none' }}
         viewBox="0 0 1440 800"
         preserveAspectRatio="xMidYMid slice"
         aria-hidden
       >
         <defs>
           <pattern id="gccgrid" width="80" height="80" patternUnits="userSpaceOnUse">
-            <circle cx="40" cy="40" r="1" fill="var(--ink)" />
+            <circle cx="40" cy="40" r="1" fill="var(--ink-on-light)" opacity="0.35" />
           </pattern>
-          <radialGradient id="gccfade" cx="20%" cy="50%" r="80%">
-            <stop offset="0%" stopColor="var(--accent)" stopOpacity="0.45" />
+          <radialGradient id="gccfade" cx="80%" cy="50%" r="60%">
+            <stop offset="0%" stopColor="var(--accent)" stopOpacity="0.20" />
             <stop offset="100%" stopColor="var(--accent)" stopOpacity="0" />
           </radialGradient>
         </defs>
@@ -800,15 +786,15 @@ function UAEPride() {
       <Container style={{ position: 'relative' }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 32, maxWidth: 880 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-            <span style={{ fontSize: 36 }} aria-hidden>
+            <span style={{ fontSize: 32 }} aria-hidden>
               🇦🇪
             </span>
             <span
               style={{
                 fontFamily: 'var(--mono)',
                 fontSize: 12,
-                color: 'var(--ink)',
-                opacity: 0.8,
+                color: 'var(--ink-on-light)',
+                opacity: 0.75,
                 letterSpacing: '0.18em',
                 textTransform: 'uppercase',
               }}
@@ -816,12 +802,20 @@ function UAEPride() {
               Made in the UAE
             </span>
           </div>
-          <DisplayHead size="clamp(44px, 7vw, 116px)">
+          <DisplayHead size="clamp(44px, 7vw, 116px)" style={{ color: 'var(--ink-on-light)' }}>
             Proudly UAE-based,
             <br />
             <GoldItalic>globally</GoldItalic> minded.
           </DisplayHead>
-          <p style={{ fontSize: 18, lineHeight: 1.55, color: 'var(--ink-2)', maxWidth: 720, margin: 0 }}>
+          <p
+            style={{
+              fontSize: 18,
+              lineHeight: 1.55,
+              color: 'var(--ink-2-on-light)',
+              maxWidth: 720,
+              margin: 0,
+            }}
+          >
             Born in the heart of Dubai, Kanz.ai carries the UAE's spirit of ambition, innovation, and excellence to every
             engagement. We are honoured to represent the nation's vision of becoming a global AI leader — serving clients
             across the Emirates and beyond.
@@ -876,13 +870,13 @@ function InsightsSection() {
               style={{
                 padding: 32,
                 minHeight: 260,
-                border: '1px solid var(--line-strong)',
+                border: i === 0 ? '1px solid var(--paper-light)' : '1px solid var(--line-strong)',
                 borderRadius: 20,
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'space-between',
-                background: i === 0 ? 'var(--paper-2)' : 'var(--paper)',
-                color: 'var(--ink)',
+                background: i === 0 ? 'var(--paper-light)' : 'var(--paper)',
+                color: i === 0 ? 'var(--ink-on-light)' : 'var(--ink)',
                 transition: 'transform .3s ease',
                 textDecoration: 'none',
               }}

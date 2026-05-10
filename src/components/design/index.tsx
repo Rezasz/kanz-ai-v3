@@ -22,7 +22,16 @@ export function Container({
   );
 }
 
-export function Eyebrow({ children, style }: { children: ReactNode; style?: Style }) {
+export function Eyebrow({
+  children,
+  style,
+  plain,
+}: {
+  children: ReactNode;
+  style?: Style;
+  /** Suppress the gold leading dash + dot (rare — use when accent would compete) */
+  plain?: boolean;
+}) {
   return (
     <div
       style={{
@@ -37,7 +46,21 @@ export function Eyebrow({ children, style }: { children: ReactNode; style?: Styl
         ...style,
       }}
     >
-      <span style={{ width: 22, height: 1, background: 'currentColor', opacity: 0.5 }} />
+      {!plain && (
+        <>
+          <span style={{ width: 22, height: 1, background: 'var(--accent)' }} />
+          <span
+            style={{
+              width: 5,
+              height: 5,
+              borderRadius: '50%',
+              background: 'var(--accent)',
+              flexShrink: 0,
+              marginRight: 2,
+            }}
+          />
+        </>
+      )}
       {children}
     </div>
   );
@@ -213,6 +236,19 @@ export function KanzMark({ size = 32, accent = 'var(--accent)' }: { size?: numbe
   );
 }
 
+/** Render a kicker like "01 / About" with the leading number in accent gold. */
+function KickerLabel({ kicker }: { kicker: string }) {
+  // Split on the first slash so "01 / About" → ["01", "/ About"]
+  const m = kicker.match(/^(\S+)(\s*\/\s*.+)$/);
+  if (!m) return <>{kicker}</>;
+  return (
+    <>
+      <span style={{ color: 'var(--accent)', fontWeight: 500 }}>{m[1]}</span>
+      <span>{m[2]}</span>
+    </>
+  );
+}
+
 export function PageHero({
   kicker,
   title,
@@ -249,7 +285,9 @@ export function PageHero({
       </svg>
 
       <Container>
-        <Eyebrow style={{ marginBottom: 32 }}>{kicker}</Eyebrow>
+        <Eyebrow style={{ marginBottom: 32 }}>
+          <KickerLabel kicker={kicker} />
+        </Eyebrow>
         <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: 60, alignItems: 'end' }}>
           <DisplayHead size="clamp(48px, 7vw, 120px)" style={{ lineHeight: 1.06, maxWidth: 1000, paddingBottom: 12 }}>
             {title}
@@ -746,7 +784,9 @@ export function DetailHeader({
             marginBottom: 32,
           }}
         >
-          <Eyebrow>{category}</Eyebrow>
+          <Eyebrow>
+            <KickerLabel kicker={category} />
+          </Eyebrow>
           {code && (
             <span
               style={{

@@ -179,8 +179,8 @@ const Insights = () => {
           <div
             className="kanz-ins-featured"
             style={{
-              background: 'var(--paper-2)',
-              color: 'var(--ink)',
+              background: 'var(--paper-light)',
+              color: 'var(--ink-on-light)',
               borderRadius: 4,
               padding: '60px 56px',
               display: 'grid',
@@ -211,7 +211,7 @@ const Insights = () => {
                     fontFamily: 'var(--mono)',
                     fontSize: 11,
                     letterSpacing: '0.16em',
-                    color: 'var(--muted)',
+                    color: 'var(--muted-on-light)',
                   }}
                 >
                   {featured.category}
@@ -225,11 +225,20 @@ const Insights = () => {
                   lineHeight: 1.08,
                   letterSpacing: '-0.02em',
                   margin: 0,
+                  color: 'var(--ink-on-light)',
                 }}
               >
                 {featured.title}
               </h2>
-              <p style={{ fontSize: 16, lineHeight: 1.55, color: 'var(--muted)', margin: '24px 0 32px', maxWidth: 560 }}>
+              <p
+                style={{
+                  fontSize: 16,
+                  lineHeight: 1.55,
+                  color: 'var(--muted-on-light)',
+                  margin: '24px 0 32px',
+                  maxWidth: 560,
+                }}
+              >
                 {featured.excerpt}
               </p>
               <ArrowLink to={featured.link} dark>
@@ -248,9 +257,9 @@ const Insights = () => {
                   cy="200"
                   r={40 + i * 30}
                   fill="none"
-                  stroke="var(--ink)"
+                  stroke="var(--ink-on-light)"
                   strokeWidth="0.6"
-                  opacity={0.18 + i * 0.08}
+                  opacity={0.15 + i * 0.06}
                 />
               ))}
               <circle cx="200" cy="200" r="16" fill="var(--accent)" />
@@ -261,9 +270,9 @@ const Insights = () => {
                   y1="200"
                   x2={200 + Math.cos((deg * Math.PI) / 180) * 200}
                   y2={200 + Math.sin((deg * Math.PI) / 180) * 200}
-                  stroke="var(--ink)"
+                  stroke="var(--ink-on-light)"
                   strokeWidth="0.6"
-                  opacity="0.15"
+                  opacity="0.12"
                 />
               ))}
             </svg>
