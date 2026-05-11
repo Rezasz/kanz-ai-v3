@@ -204,7 +204,7 @@ export function ArrowLink({
   ghost?: boolean;
   style?: Style;
 }) {
-  const external = /^https?:|^mailto:|^tel:|^#/.test(to);
+  const external = /^https?:|^mailto:|^tel:|^#|\.html?$/.test(to);
   const inner = (
     <ArrowBtn primary={primary} dark={dark} ghost={ghost} style={style}>
       {children}
