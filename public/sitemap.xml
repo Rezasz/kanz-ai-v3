@@ -4,7 +4,7 @@
   <!-- Home -->
   <url>
     <loc>https://www.kanz.ai/</loc>
-    <lastmod>2026-05-11</lastmod>
+    <lastmod>2026-05-12</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
@@ -14,7 +14,7 @@
   <url><loc>https://www.kanz.ai/services</loc><lastmod>2026-05-11</lastmod><changefreq>monthly</changefreq><priority>0.9</priority></url>
   <url><loc>https://www.kanz.ai/framework</loc><lastmod>2026-05-11</lastmod><changefreq>monthly</changefreq><priority>0.9</priority></url>
   <url><loc>https://www.kanz.ai/industries</loc><lastmod>2026-05-11</lastmod><changefreq>monthly</changefreq><priority>0.9</priority></url>
-  <url><loc>https://www.kanz.ai/insights</loc><lastmod>2026-05-11</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://www.kanz.ai/insights</loc><lastmod>2026-05-12</lastmod><changefreq>weekly</changefreq><priority>0.9</priority></url>
   <url><loc>https://www.kanz.ai/contact</loc><lastmod>2026-05-11</lastmod><changefreq>yearly</changefreq><priority>0.7</priority></url>
 
   <!-- Assessments -->
@@ -46,17 +46,65 @@
   <url><loc>https://www.kanz.ai/industries/public-sector</loc><lastmod>2026-05-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
   <url><loc>https://www.kanz.ai/industries/retail</loc><lastmod>2026-05-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
 
-  <!-- Insight whitepapers -->
-  <url><loc>https://www.kanz.ai/insights/ai-readiness-framework</loc><lastmod>2026-05-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://www.kanz.ai/insights/scalable-ai-strategy</loc><lastmod>2026-05-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://www.kanz.ai/insights/ai-governance-compliance</loc><lastmod>2026-05-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://www.kanz.ai/insights/ai-maturity-model</loc><lastmod>2026-05-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://www.kanz.ai/insights/ai-digital-transformation</loc><lastmod>2026-05-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://www.kanz.ai/insights/ai-decision-intelligence</loc><lastmod>2026-05-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://www.kanz.ai/insights/data-strategy-ai-success</loc><lastmod>2026-05-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://www.kanz.ai/insights/ai-enabled-workforce</loc><lastmod>2026-05-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://www.kanz.ai/insights/operationalizing-ai</loc><lastmod>2026-05-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://www.kanz.ai/insights/economics-of-ai</loc><lastmod>2026-05-11</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <!-- Articles — AI Strategy -->
+  <url><loc>https://www.kanz.ai/articles/01-what-is-an-ai-strategy-and-why-every-enterprise-needs-one.html</loc><lastmod>2026-05-12</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://www.kanz.ai/articles/02-how-to-build-an-ai-roadmap-for-enterprise-transformation.html</loc><lastmod>2026-05-12</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://www.kanz.ai/articles/03-ai-strategy-consulting-in-dubai--what-leaders-should-know.html</loc><lastmod>2026-05-12</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://www.kanz.ai/articles/04-how-to-prioritize-ai-use-cases-for-maximum-roi.html</loc><lastmod>2026-05-12</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://www.kanz.ai/articles/05-why-most-ai-pilots-fail-to-scale.html</loc><lastmod>2026-05-12</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://www.kanz.ai/articles/06-from-ai-experimentation-to-enterprise-ai-adoption.html</loc><lastmod>2026-05-12</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://www.kanz.ai/articles/07-how-ceos-should-think-about-ai-transformation.html</loc><lastmod>2026-05-12</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://www.kanz.ai/articles/08-building-an-ai-operating-model-for-large-organizations.html</loc><lastmod>2026-05-12</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://www.kanz.ai/articles/09-ai-strategy-for-government-and-public-sector-organizations.html</loc><lastmod>2026-05-12</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://www.kanz.ai/articles/10-ai-transformation-in-the-gcc--opportunities-and-risks.html</loc><lastmod>2026-05-12</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+
+  <!-- Articles — AI Readiness & Maturity -->
+  <url><loc>https://www.kanz.ai/articles/11-what-is-ai-readiness--a-practical-guide-for-enterprises.html</loc><lastmod>2026-05-12</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://www.kanz.ai/articles/12-ai-readiness-assessment--what-it-measures-and-why-it-matters.html</loc><lastmod>2026-05-12</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://www.kanz.ai/articles/13-the-four-dimensions-of-ai-maturity--technology--people--process--and-data.html</loc><lastmod>2026-05-12</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://www.kanz.ai/articles/14-how-to-measure-ai-maturity-in-your-organization.html</loc><lastmod>2026-05-12</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://www.kanz.ai/articles/15-ai-maturity-model-for-enterprise-leaders.html</loc><lastmod>2026-05-12</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://www.kanz.ai/articles/16-how-to-create-an-ai-readiness-scorecard.html</loc><lastmod>2026-05-12</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://www.kanz.ai/articles/17-data-readiness-for-ai--a-practical-enterprise-checklist.html</loc><lastmod>2026-05-12</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://www.kanz.ai/articles/18-infrastructure-readiness-for-ai-adoption.html</loc><lastmod>2026-05-12</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://www.kanz.ai/articles/19-talent-readiness--building-the-skills-needed-for-ai-transformation.html</loc><lastmod>2026-05-12</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://www.kanz.ai/articles/20-change-management-for-ai-adoption.html</loc><lastmod>2026-05-12</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+
+  <!-- Articles — Governance & Compliance -->
+  <url><loc>https://www.kanz.ai/articles/21-what-is-ai-governance--a-practical-guide-for-business-leaders.html</loc><lastmod>2026-05-12</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://www.kanz.ai/articles/22-ai-governance-framework-for-enterprises.html</loc><lastmod>2026-05-12</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://www.kanz.ai/articles/23-responsible-ai--principles--policies--and-practical-controls.html</loc><lastmod>2026-05-12</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://www.kanz.ai/articles/24-ai-risk-management-for-regulated-industries.html</loc><lastmod>2026-05-12</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://www.kanz.ai/articles/25-how-to-build-an-ai-policy-for-your-organization.html</loc><lastmod>2026-05-12</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://www.kanz.ai/articles/26-ai-compliance-in-healthcare--banking--and-government.html</loc><lastmod>2026-05-12</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://www.kanz.ai/articles/27-ethical-ai-guidelines-for-enterprise-deployment.html</loc><lastmod>2026-05-12</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://www.kanz.ai/articles/28-ai-governance-in-the-middle-east--what-organizations-need-to-prepare-for.html</loc><lastmod>2026-05-12</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://www.kanz.ai/articles/29-model-monitoring-and-ai-accountability.html</loc><lastmod>2026-05-12</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://www.kanz.ai/articles/30-how-boards-should-govern-ai-risk.html</loc><lastmod>2026-05-12</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+
+  <!-- Articles — Sector deep-dives -->
+  <url><loc>https://www.kanz.ai/articles/31-ai-in-healthcare--from-diagnostics-to-population-health.html</loc><lastmod>2026-05-12</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://www.kanz.ai/articles/32-ai-in-banking--fraud-detection--risk--and-customer-automation.html</loc><lastmod>2026-05-12</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://www.kanz.ai/articles/33-ai-in-manufacturing--predictive-maintenance-and-smart-operations.html</loc><lastmod>2026-05-12</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://www.kanz.ai/articles/34-ai-in-retail--personalization--inventory--and-conversion-optimization.html</loc><lastmod>2026-05-12</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://www.kanz.ai/articles/35-ai-in-the-public-sector--citizen-services-and-operational-efficiency.html</loc><lastmod>2026-05-12</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://www.kanz.ai/articles/36-ai-in-supply-chain--demand-forecasting-and-supplier-risk.html</loc><lastmod>2026-05-12</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://www.kanz.ai/articles/37-ai-for-hospitals--building-an-ai-ready-digital-health-infrastructure.html</loc><lastmod>2026-05-12</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://www.kanz.ai/articles/38-ai-for-banks-in-the-gcc--strategy--governance--and-implementation.html</loc><lastmod>2026-05-12</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://www.kanz.ai/articles/39-ai-for-government-transformation-in-the-middle-east.html</loc><lastmod>2026-05-12</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://www.kanz.ai/articles/40-how-regulated-industries-should-adopt-ai-safely.html</loc><lastmod>2026-05-12</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+
+  <!-- Insight whitepapers (legacy long-form, kept for inbound links) -->
+  <url><loc>https://www.kanz.ai/insights/ai-readiness-framework</loc><lastmod>2026-05-11</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://www.kanz.ai/insights/scalable-ai-strategy</loc><lastmod>2026-05-11</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://www.kanz.ai/insights/ai-governance-compliance</loc><lastmod>2026-05-11</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://www.kanz.ai/insights/ai-maturity-model</loc><lastmod>2026-05-11</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://www.kanz.ai/insights/ai-digital-transformation</loc><lastmod>2026-05-11</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://www.kanz.ai/insights/ai-decision-intelligence</loc><lastmod>2026-05-11</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://www.kanz.ai/insights/data-strategy-ai-success</loc><lastmod>2026-05-11</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://www.kanz.ai/insights/ai-enabled-workforce</loc><lastmod>2026-05-11</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://www.kanz.ai/insights/operationalizing-ai</loc><lastmod>2026-05-11</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://www.kanz.ai/insights/economics-of-ai</loc><lastmod>2026-05-11</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
 
   <!-- Legal -->
   <url><loc>https://www.kanz.ai/disclaimer</loc><lastmod>2026-05-11</lastmod><changefreq>yearly</changefreq><priority>0.3</priority></url>

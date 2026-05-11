@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   ArrowLink,
   Container,
@@ -13,6 +14,7 @@ type Article = {
   title: string;
   excerpt: string;
   category: string;
+  href?: string;
 };
 
 const ARTICLES: Article[] = [
@@ -336,33 +338,129 @@ const ARTICLES: Article[] = [
       'Banking, healthcare, government, energy — model-risk discipline, sector regulator alignment, and EU AI Act readiness combined.',
     category: 'AI Governance',
   },
+  {
+    num: 41,
+    slug: 'ai-readiness-framework',
+    href: '/insights/ai-readiness-framework',
+    title: 'AI Readiness Framework: A Step-by-Step Guide for Enterprises',
+    excerpt:
+      'A comprehensive framework for assessing and enhancing AI readiness across technology, people, process, and data dimensions.',
+    category: 'AI Readiness',
+  },
+  {
+    num: 42,
+    slug: 'scalable-ai-strategy',
+    href: '/insights/scalable-ai-strategy',
+    title: 'Building a Scalable AI Strategy: From Vision to Execution',
+    excerpt:
+      'Develop and execute an AI strategy that aligns with business goals and scales effectively across your organization.',
+    category: 'AI Strategy',
+  },
+  {
+    num: 43,
+    slug: 'ai-governance-compliance',
+    href: '/insights/ai-governance-compliance',
+    title: 'AI Governance & Compliance: Innovation vs Risk',
+    excerpt:
+      'Navigate the complex ethical and regulatory landscape for AI while maintaining innovation and managing risks effectively.',
+    category: 'AI Governance',
+  },
+  {
+    num: 44,
+    slug: 'ai-maturity-model',
+    href: '/insights/ai-maturity-model',
+    title: 'Enterprise AI Maturity Model: Assessing & Advancing Capabilities',
+    excerpt:
+      'A structured model to assess your organization’s AI maturity and build a roadmap for advancing capabilities.',
+    category: 'AI Maturity',
+  },
+  {
+    num: 45,
+    slug: 'ai-digital-transformation',
+    href: '/insights/ai-digital-transformation',
+    title: 'The Role of AI in Digital Transformation',
+    excerpt:
+      'Explore how AI acts as a catalyst in digital transformation and drives business model innovation across industries.',
+    category: 'AI Strategy',
+  },
+  {
+    num: 46,
+    slug: 'ai-decision-intelligence',
+    href: '/insights/ai-decision-intelligence',
+    title: 'AI in Decision Intelligence: Enhancing Strategic Decisions',
+    excerpt:
+      'How AI augments human decision-making with data-driven insights for better strategic outcomes.',
+    category: 'AI Strategy',
+  },
+  {
+    num: 47,
+    slug: 'data-strategy-ai-success',
+    href: '/insights/data-strategy-ai-success',
+    title: 'Data Strategy for AI Success: Quality, Governance, Scale',
+    excerpt:
+      'Build a robust data foundation to ensure AI initiatives deliver maximum value and scale effectively.',
+    category: 'AI Readiness',
+  },
+  {
+    num: 48,
+    slug: 'ai-enabled-workforce',
+    href: '/insights/ai-enabled-workforce',
+    title: 'AI-Enabled Workforce: Redefining Roles & Upskilling',
+    excerpt:
+      'Prepare your workforce for an AI-powered future through strategic upskilling and organizational change.',
+    category: 'AI Readiness',
+  },
+  {
+    num: 49,
+    slug: 'operationalizing-ai',
+    href: '/insights/operationalizing-ai',
+    title: 'Operationalizing AI: From PoC to Enterprise Adoption',
+    excerpt:
+      'Move from AI proof-of-concepts to full-scale implementation and enterprise-wide adoption.',
+    category: 'AI Strategy',
+  },
+  {
+    num: 50,
+    slug: 'economics-of-ai',
+    href: '/insights/economics-of-ai',
+    title: 'The Economics of AI: Measuring ROI & Business Impact',
+    excerpt:
+      'Frameworks and methodologies for calculating AI return on investment and justifying AI expenditures.',
+    category: 'AI Strategy',
+  },
 ];
 
-function articleHref(slug: string) {
-  return `/articles/${slug}.html`;
+function articleHref(a: Pick<Article, 'slug' | 'href'>) {
+  return a.href ?? `/articles/${a.slug}.html`;
 }
 
-function ArticleCard({ num, slug, title, excerpt, category }: Article) {
+function isStaticHtml(href: string) {
+  return /\.html?$/.test(href);
+}
+
+function ArticleCard(article: Article) {
+  const { num, title, excerpt, category } = article;
   const [hover, setHover] = useState(false);
-  return (
-    <a
-      href={articleHref(slug)}
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
-      style={{
-        background: 'var(--paper-2)',
-        padding: '40px 36px 36px',
-        minHeight: 340,
-        borderRadius: 4,
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'space-between',
-        textDecoration: 'none',
-        color: 'var(--ink)',
-        transition: 'transform .2s ease',
-        transform: hover ? 'translateY(-4px)' : 'none',
-      }}
-    >
+  const href = articleHref(article);
+  const cardStyle: React.CSSProperties = {
+    background: 'var(--paper-2)',
+    padding: '40px 36px 36px',
+    minHeight: 340,
+    borderRadius: 4,
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'space-between',
+    textDecoration: 'none',
+    color: 'var(--ink)',
+    transition: 'transform .2s ease',
+    transform: hover ? 'translateY(-4px)' : 'none',
+  };
+  const handlers = {
+    onMouseEnter: () => setHover(true),
+    onMouseLeave: () => setHover(false),
+  };
+  const inner = (
+    <>
       <div>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 28, alignItems: 'center' }}>
           <span
@@ -420,7 +518,19 @@ function ArticleCard({ num, slug, title, excerpt, category }: Article) {
           />
         </svg>
       </div>
-    </a>
+    </>
+  );
+  if (isStaticHtml(href)) {
+    return (
+      <a href={href} style={cardStyle} {...handlers}>
+        {inner}
+      </a>
+    );
+  }
+  return (
+    <Link to={href} style={cardStyle} {...handlers}>
+      {inner}
+    </Link>
   );
 }
 
@@ -519,7 +629,7 @@ const Insights = () => {
               >
                 {featured.excerpt}
               </p>
-              <ArrowLink to={articleHref(featured.slug)} dark>
+              <ArrowLink to={articleHref(featured)} dark>
                 Read article
               </ArrowLink>
             </div>

@@ -1,8 +1,10 @@
 # https://www.kanz.ai — robots.txt
-# Allow well-behaved crawlers to index everything.
+# Allow well-behaved crawlers to index everything, including
+# the long-form articles under /articles/.
 
 User-agent: *
 Allow: /
+Allow: /articles/
 
 # AI training crawlers — explicit (no opinion yet, allow by default; flip to
 # Disallow: / under each agent if you want to opt out later).
