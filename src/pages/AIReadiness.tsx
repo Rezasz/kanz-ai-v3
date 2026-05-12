@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Chart as ChartJS,
   RadialLinearScale,
@@ -1470,10 +1470,89 @@ function DimList({ title, color, ids }: { title: string; color: string; ids: str
 /*  Top-level page                                                      */
 /* ------------------------------------------------------------------ */
 
+function computeFlowProgress(state: State): { fraction: number; phase: string; detail: string } {
+  if (INTRO_ORDER.includes(state.step as IntroStep)) {
+    const i = INTRO_ORDER.indexOf(state.step as IntroStep);
+    return {
+      fraction: ((i + 1) / INTRO_ORDER.length) * 0.05,
+      phase: 'Intro',
+      detail: `Step ${i + 1} of ${INTRO_ORDER.length}`,
+    };
+  }
+  if (state.step === 'dashboard') {
+    return { fraction: 1, phase: 'Complete', detail: 'Dashboard' };
+  }
+  const dimsBefore = PILLARS.slice(0, state.pillarIndex).reduce(
+    (sum, p) => sum + (TRIPLETS_BY_PILLAR[p.id]?.length ?? 0),
+    0,
+  );
+  const pillar = PILLARS[state.pillarIndex];
+  const triplets = TRIPLETS_BY_PILLAR[pillar.id] ?? [];
+  // Position within the 52 dimensions (1-indexed, completed-so-far)
+  const completed =
+    state.step === 'pillar_summary' ? dimsBefore + triplets.length : dimsBefore + state.dimInPillar;
+  const fraction = 0.05 + (completed / TRIPLETS.length) * 0.9;
+  return {
+    fraction,
+    phase: state.step === 'pillar_summary' ? `${pillar.id} summary` : pillar.id,
+    detail: `Dimension ${Math.min(completed + (state.step === 'pillar_summary' ? 0 : 1), TRIPLETS.length)} of ${TRIPLETS.length}`,
+  };
+}
+
+function FlowProgress({ progress }: { progress: { fraction: number; phase: string; detail: string } }) {
+  return (
+    <div
+      style={{
+        position: 'sticky',
+        top: 0,
+        zIndex: 30,
+        background: 'rgba(10,10,9,0.92)',
+        backdropFilter: 'blur(8px)',
+        WebkitBackdropFilter: 'blur(8px)',
+        borderBottom: '1px solid var(--line)',
+      }}
+    >
+      <div style={{ height: 3, background: 'var(--paper-2)', position: 'relative', overflow: 'hidden' }}>
+        <div
+          style={{
+            height: '100%',
+            width: `${Math.min(100, Math.max(0, progress.fraction * 100))}%`,
+            background: ACCENT,
+            transition: 'width .35s ease',
+          }}
+        />
+      </div>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          padding: '8px 24px',
+          fontFamily: 'var(--mono)',
+          fontSize: 10,
+          letterSpacing: '0.18em',
+          textTransform: 'uppercase',
+          color: 'var(--muted)',
+        }}
+      >
+        <span>{progress.phase}</span>
+        <span>{progress.detail}</span>
+        <span style={{ color: 'var(--ink)' }}>{Math.round(progress.fraction * 100)}%</span>
+      </div>
+    </div>
+  );
+}
+
 const AIReadiness: React.FC = () => {
   const [state, setState] = useState<State>(INITIAL);
   const introIndex = INTRO_ORDER.indexOf(state.step as IntroStep);
   const introTotal = INTRO_ORDER.length;
+  const progress = useMemo(() => computeFlowProgress(state), [state]);
+
+  // Scroll to top on every step / pillar / dimension change.
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' as ScrollBehavior });
+  }, [state.step, state.pillarIndex, state.dimInPillar]);
 
   const goIntro = (step: IntroStep) => setState((s) => ({ ...s, step }));
 
@@ -1519,6 +1598,7 @@ const AIReadiness: React.FC = () => {
 
   return (
     <div>
+      <FlowProgress progress={progress} />
       {showHero && (
         <PageHero
           kicker="06 / AI Readiness"
