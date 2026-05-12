@@ -7,6 +7,12 @@ isn't obvious from reading the code.
 
 | Commit | Change |
 |---|---|
+| `0fe33f5` | `tsconfig.app.json`: declare `@/*` path alias so tsx/IDE match Vite's resolver |
+| `1d6e4da` | AI Readiness: scroll-to-top on every step change + persistent sticky `FlowProgress` bar |
+| `029d3a0` | Refresh AI Readiness on upstream `questionnaire-app-spec.json` (v3.0.0, 208 atomic Q-IDs); thin wrapper over `src/data/aiReadinessSpec.json` |
+| `57f7525` | First AI Readiness v3 rewrite from YAML (later superseded by the JSON-spec consumption above) |
+| `9d3caa7` | Insights index lists all 50 (40 new + 10 legacy); sitemap +40 article URLs + 10 legacy; `robots.txt` explicit `Allow: /articles/` |
+| `2a2e2ad` | Add 40 long-form articles to `public/articles/`, fix dead CTAs (`#` → `/assess`), link brand to `/`, replace nav-meta with `← Insights`; `ArrowLink` treats `.html` as external |
 | `7f4f76f` | Center radar on the visible hero (square translate-centered element instead of section-filling SVG) |
 | `64dd16f` | Hero backdrop: proper rotating radar sweep (90° trailing wedge + bright leading beam) |
 | `ce7c75a` | **Bug fix:** `--accent` and `--muted` CSS vars were silently shadowed by shadcn HSL triplets — renamed shadcn ones to `--accent-hsl` / `--muted-hsl`. This single fix unlocked all gold accents that looked broken before. |
@@ -112,6 +118,152 @@ centered via `translate(-50%,-50%)` inside the hero section, sized at
 Animation is set up with `setAttribute('transform', 'rotate(angle 600
 600)')` on the inner `<g>` — **don't** use CSS `transform-origin` in
 SVG coords, that interferes in some browsers.
+
+## Insights articles (40 long-form HTML)
+
+40 standalone articles live at `public/articles/01-…html` through
+`40-…html`. They're served as static files (Vercel filesystem matches
+take precedence over the SPA rewrite), so links from the React app use
+plain `<a>` tags, not `<Link>` — see `Insights.tsx` and `ArrowLink`
+(which now also treats `.html` paths as external).
+
+- **Inputs.** The raw HTML I was given lives in `articles_html/` at the
+  repo root; that folder is **untracked** since `public/articles/`
+  carries the live versions. Treat `articles_html/` as a scratch
+  source: drop new files there, or copy into `public/articles/`
+  directly and re-run the fix-up pass below.
+- **Per-file fix-ups already applied** to every file in
+  `public/articles/`:
+  - `href="#"` on the CTA → `href="/assess"`
+  - Brand mark wrapped in `<a href="/">` so the Kanz.ai logo
+    navigates home
+  - Nav-meta replaced with `<a class="nav-meta" href="/insights">←
+    Insights</a>`
+  - Footer `kanz.ai` text wrapped in a link to `/`
+- **Adding more articles.** Drop the HTML into `public/articles/`,
+  apply the same four fix-ups (the regex script that did it is
+  reproducible — `href="#"` swap is trivial; nav/brand replacement
+  patterns are in commit `2a2e2ad`), then add an entry to the
+  `ARTICLES` array in `src/pages/Insights.tsx` with `num`, `slug`,
+  `title`, `excerpt`, `category`. Sitemap + robots are auto-allowed.
+- **Featured.** Article #01 is hard-coded as the featured card. Swap
+  by reordering `ARTICLES` so the desired one is at index 0.
+- **Card link routing.** `ArticleCard` switches between `<a>` (for
+  paths ending in `.html`) and React Router `<Link>` (for the 10
+  legacy `/insights/<slug>` entries) automatically — driven by the
+  optional `href` field on each `ARTICLES` entry. Articles without
+  `href` default to `/articles/${slug}.html`.
+
+The articles ship with their own self-contained dark/cream/gold CSS
+(close to the site palette but not pixel-identical: `--gold: #D9A33C`
+vs site `--accent: #F2A024`). Leaving as-is for now; if you ever want
+strict parity, swap the inline `:root` block at the top of each file.
+
+## AI Readiness Framework v3.0.0 (`/ai-readiness`)
+
+The assessment is a faithful implementation of the upstream
+**Kanz-ai-Org/Ai-Maturity-Framwork** spec. 9 pillars × ~6 dimensions
+each = **52 dimensions**, and each dimension asks **three required
+questions** (current capability 1–5, target capability 1–5, NIST
+risk-maturity tier) plus an optional evidence prompt. The upstream
+spec calls these atomic Q-IDs: `Q-{pillar}-{dim}-C`, `-T`, `-R`, `-E`.
+
+### Data layer
+
+Two files in `src/data/`:
+
+| File | What it is | Source of truth |
+|---|---|---|
+| `aiReadinessSpec.json` | The canonical upstream `questionnaire-app-spec.json` (438 KB, 208 question records, all rubric + NIST tier narratives + option text) | Upstream repo, `assessments/questionnaire-app-spec.json` |
+| `aiReadinessActions.json` | 152 gap-driven actions (title, description, effort, duration, owner, expected outcome), each tied to a dimension | Upstream `pillars/0N-…/data/actions.yaml`; the JSON was generated locally because actions aren't in the spec JSON |
+
+`src/lib/aiReadinessFramework.ts` is a **thin typed wrapper**: imports
+both JSONs, groups questions into `TRIPLETS` (one per dimension with
+`current`, `target`, `risk`, optional `evidence`), and exposes scoring
+helpers (`dimensionGap`, `gapPriority`, `isRau`, `isHealthy`,
+`pillarRollup`, `orgRollup`, `pillarWeight`). The page (`AIReadiness.tsx`)
+only consumes the wrapper — never the JSON directly.
+
+### Refreshing from upstream
+
+To pick up new content (rubric edits, new dimensions, etc.):
+
+1. Download the latest `questionnaire-app-spec.json` from the upstream
+   repo's `assessments/` directory and overwrite
+   `src/data/aiReadinessSpec.json` verbatim.
+2. (If the upstream's `actions.yaml` also changed) regenerate
+   `src/data/aiReadinessActions.json`. The Python pattern is in the
+   conversation history of commit `029d3a0`; it reads each pillar's
+   `actions.yaml` and emits a flat JSON array. Save under
+   `src/data/aiReadinessActions.json`.
+3. `npm run build`. The wrapper adapts automatically — no code change
+   needed unless the upstream schema itself shifts.
+
+### Flow
+
+Five intro screens before any question: **Concepts → Answer scales →
+Weighting → Sections → Setup**. Then 52 question screens (one per
+dimension, three picker blocks each), each followed by a **per-pillar
+summary** at the end of the section, then the final **dashboard**
+(org composite, RAU banner, healthy badges, top-12 gap-prioritized
+actions, JSON export matching the spec's §7 schema).
+
+A sticky **`FlowProgress`** bar sits at the top of every screen
+(intros, questions, summaries, dashboard) showing phase label,
+detail line (e.g. `Dimension 14 of 52`), percentage, and an
+accent-filled bar. Weighting: 5% for intros, 90% for the 52
+dimensions, 100% at the dashboard. A `useEffect` on
+`step/pillarIndex/dimInPillar` scrolls the window to top on every
+transition, so users always land at the new screen's top.
+
+### RAU and Healthy
+
+These two states are non-negotiable framework concepts; keep them
+visible.
+
+- **RAU (Racing Ahead Unsafely)** — `current >= 4` AND `nist_tier ∈
+  {partial, risk_informed}`. Capability has outrun risk maturity.
+  Flagged red (`#E0552B`) on the per-pillar summary, the dashboard
+  banner, and the RAU dimension list. The dashboard banner only
+  appears when `totalRau > 0`.
+- **Healthy** — `current >= 4` AND `nist_tier ∈ {repeatable,
+  adaptive}`. High capability with strong risk control. Green
+  (`#8FBF7A`) badges on the same surfaces.
+
+### Org composite math
+
+`orgRollup(profile, responses)`:
+
+- `pillar.currentAvg` = mean of `current` values across the pillar's
+  answered dimensions
+- `composite` = Σ(`pillar.currentAvg` × `weight[profile][pillarId]`)
+  / Σ(`weight[profile][pillarId]`)  — only weights of pillars with
+  at least one answer count
+- `org_risk_tier` = the **worst** tier across all answered
+  dimensions (partial < risk_informed < repeatable < adaptive). The
+  spec is deliberately pessimistic — one Partial-tier dimension drags
+  the org tier to Partial even if everything else is Adaptive.
+
+### Testing the assessment
+
+There's no committed test runner, but a self-contained smoke test
+exists at `/tmp/test_questionnaire.ts` (66 assertions, covers data
+integrity + scoring helpers + rollup math + edge cases). To run it
+locally:
+
+```bash
+# copy into the repo so @/ resolves, then:
+npx tsx --tsconfig ./tsconfig.app.json ./_test_framework.ts
+```
+
+The test imports from `@/lib/aiReadinessFramework` and exercises
+`pillarRollup`, `orgRollup`, `isRau`, `isHealthy`, all three weighting
+profiles, the worst-tier rollup, and edge cases (empty responses,
+partial responses). The `@/*` path alias in `tsconfig.app.json`
+(commit `0fe33f5`) is what makes the test runnable.
+
+If you ever want a real persisted test suite, drop Vitest in and lift
+the script into `src/__tests__/`.
 
 ## OmniInbox operations
 
@@ -242,24 +394,37 @@ accent ever shifts, update these in `AIReadiness.tsx`,
 
 ## Known issues / future work
 
-- **TS strict warnings (~170)** — pre-existing in `AIReadiness.tsx`,
-  `DataMaturityAssessment.tsx`, plus `React unused` and missing `@/` path
-  alias in `tsconfig`. New design-system + page-rewrite code is clean.
-  Cleanup is mechanical but not urgent — build passes regardless.
-- **Bundle size** — single ~1.6 MB JS chunk (gzip ~442 KB). Code-splitting
-  via `manualChunks` (or `React.lazy()` per-route) would help LCP. Not done.
-- **27 detail pages still on legacy markup** — they look right thanks to
-  `legacy-overrides.css`, but each one is still its own Framer-Motion +
-  Tailwind page from the original PwC-template scaffold. Migrating them
-  to `PageHero` + the design primitives would let us delete the legacy CSS.
+- **TS strict warnings** — `DataMaturityAssessment.tsx` and a handful
+  of legacy detail pages still throw `noImplicitAny` and unused-import
+  warnings. The rewritten `AIReadiness.tsx`, the design system, the
+  insights/article code, and `aiReadinessFramework.ts` are all clean.
+  Build passes regardless.
+- **Bundle size** — single ~2.1 MB JS chunk (gzip ~510 KB). The AI
+  Readiness JSON spec adds ~440 KB raw. Lazy-loading `/ai-readiness`
+  (and the other assessments) via `React.lazy()` per-route would drop
+  the rest of the site back below 1.7 MB and is the highest-ROI perf
+  win available.
+- **27 detail pages still on legacy markup** — they look right thanks
+  to `legacy-overrides.css`, but each one is still its own Framer-Motion
+  + Tailwind page from the original PwC-template scaffold. Migrating
+  them to `PageHero` + the design primitives would let us delete the
+  legacy CSS.
+- **10 legacy `/insights/<slug>` routes still wired** — the React
+  components in `src/pages/insights/` are no longer the primary content
+  (the 40 new articles in `public/articles/` are), but they still
+  render with the legacy template. They appear as cards 41–50 on the
+  Insights index. Migrating or retiring them is a follow-up.
 - **`package.json` name** — still `"modir-website"`, not `"kanz-ai-v3"`.
   Cosmetic; rename in a future cleanup.
 - **Spec inconsistency** — OmniInbox guide uses `metadata.form` in three
   places and `metadata.form_type` in one. We use `form` for SQL
   consistency. If the spec changes, update the constant in
   `ContactForm.tsx`.
-- **No tests** — no test runner configured. If/when you add one, Vitest
-  fits naturally with Vite.
+- **No committed test runner** — there's a self-contained smoke test
+  for the AI Readiness scoring layer (see "AI Readiness Framework"
+  above), but it lives at `/tmp/` and runs via `tsx`. If/when you add
+  a test runner, Vitest fits naturally with Vite — lift that script
+  into `src/__tests__/aiReadinessFramework.test.ts`.
 
 ## Useful commands
 
@@ -305,11 +470,19 @@ grep -E 'Route path' src/App.tsx
 | Contact form (UI) | `src/components/ContactForm.tsx` |
 | OmniInbox helper | `src/lib/omniinbox.ts` |
 | Home (all 8 sections) | `src/pages/Home.tsx` |
+| Insights index (50 cards) | `src/pages/Insights.tsx` |
+| 40 static long-form articles | `public/articles/01-…html` … `40-…html` |
+| AI Readiness Assessment (UI) | `src/pages/AIReadiness.tsx` |
+| AI Readiness framework + scoring | `src/lib/aiReadinessFramework.ts` |
+| AI Readiness JSON spec (upstream) | `src/data/aiReadinessSpec.json` |
+| AI Readiness actions library | `src/data/aiReadinessActions.json` |
 | AI Risk Assessment logic | `src/pages/AIRiskAssessment.tsx` |
 | AI Risk service page | `src/pages/services/AIRiskManagement.tsx` |
 | Assessments hub | `src/pages/AssessYourOrganization.tsx` |
 | Services hub | `src/pages/Services.tsx` |
 | PDF export utility | `src/utils/pdfExport.ts` |
 | Favicon (Kanz mark) | `public/favicon.svg` |
+| Sitemap + robots | `public/sitemap.xml`, `public/robots.txt` |
 | SPA rewrite for Vercel | `vercel.json` |
+| TS path alias `@/*` | `tsconfig.app.json` (mirrors Vite alias) |
 | Env var template | `.env.example` |
