@@ -1,6 +1,4 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Brain, CheckCircle, ClipboardCheck, LineChart, ChevronRight, ChevronLeft, BarChart } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
 import {
   Chart as ChartJS,
   RadialLinearScale,
@@ -8,613 +6,1573 @@ import {
   LineElement,
   Filler,
   Tooltip,
-  Legend
+  Legend,
 } from 'chart.js';
 import { Radar } from 'react-chartjs-2';
+import {
+  ACTIONS,
+  ACTIONS_BY_DIMENSION,
+  CAPABILITY_LEVELS,
+  DIMENSION_BY_ID,
+  NIST_TIERS,
+  PILLARS,
+  QUESTIONS,
+  QUESTIONS_BY_PILLAR,
+  WEIGHTING_PROFILES,
+  dimensionGap,
+  gapPriority,
+  isHealthy,
+  isRau,
+  orgRollup,
+  type CapabilityLevel,
+  type NistTier,
+  type Response as AssessResponse,
+  type WeightingProfileId,
+} from '@/lib/aiReadinessFramework';
+import { Container, DisplayHead, Eyebrow, GoldItalic, PageHero } from '@/components/design';
 
-ChartJS.register(
-  RadialLinearScale,
-  PointElement,
-  LineElement,
-  Filler,
-  Tooltip,
-  Legend
-);
+ChartJS.register(RadialLinearScale, PointElement, LineElement, Filler, Tooltip, Legend);
 
-const dimensions = {
-  'Vision & Strategy': ['q1', 'q2', 'q3'],
-  'Use Cases': ['q4'],
-  'Data': ['q5', 'q6'],
-  'IT Infrastructure': ['q7', 'q8'],
-  'People': ['q9', 'q10'],
-  'Governance': ['q11', 'q12', 'q13']
+/* ------------------------------------------------------------------ */
+/*  Types + step machine                                                */
+/* ------------------------------------------------------------------ */
+
+type IntroStep = 'concepts' | 'scales' | 'weighting' | 'sections' | 'setup';
+type AssessStep = 'question' | 'pillar_summary' | 'dashboard';
+type Step = IntroStep | AssessStep;
+
+const INTRO_ORDER: IntroStep[] = ['concepts', 'scales', 'weighting', 'sections', 'setup'];
+
+type State = {
+  step: Step;
+  profile: WeightingProfileId;
+  orgName: string;
+  pillarIndex: number; // 0..8 — only relevant once questions begin
+  qInPillar: number; // 0..N within current pillar
+  responses: Record<string, AssessResponse>;
 };
 
-const scoreMapping = {
-  'a': 0,
-  'b': 25,
-  'c': 50,
-  'd': 75,
-  'e': 100
+const INITIAL: State = {
+  step: 'concepts',
+  profile: 'default',
+  orgName: '',
+  pillarIndex: 0,
+  qInPillar: 0,
+  responses: {},
 };
 
-const questions = [
-  {
-    id: 'q1',
-    question: 'How important is artificial intelligence (AI) to your government entity currently?',
-    options: [
-      { value: 'a', text: 'As a cutting-edge topic, we have not started our journey into AI yet' },
-      { value: 'b', text: 'We are early adopters of AI, but do not agree on the need for an AI strategy' },
-      { value: 'c', text: 'We have defined an overarching AI strategy, and some departments have begun aligning their goals with it' },
-      { value: 'd', text: 'We have begun the implementation of our AI strategy, which has been widely integrated across most departments and has the support of the top leadership' },
-      { value: 'e', text: 'AI is seamlessly integrated into the overall strategy of the entity' }
-    ]
-  },
-  {
-    id: 'q2',
-    question: 'In your entity, how is AI budgeted?',
-    options: [
-      { value: 'a', text: 'AI budget is negligible. Funds are available for ad-hoc training and small-scope Proofs of Concept (POC)' },
-      { value: 'b', text: 'We have multiple POCs that are funded, additional funds are granted exceptionally to the AI teams for research and experimentation' },
-      { value: 'c', text: 'AI projects are funded across a variety of topics and ongoing investments are made in experimentation and POCs, including the development of software, platforms, infrastructure, and AI skills' },
-      { value: 'd', text: 'We have a dedicated budget structure for AI, along with a detailed plan for the short and long term' },
-      { value: 'e', text: 'We no longer have separate AI initiatives or budgets: the integration of functional areas and AI, along with their corresponding budgets and indicators, is seamless' }
-    ]
-  },
-  {
-    id: 'q3',
-    question: 'What is the current level of AI adoption in your organization?',
-    options: [
-      { value: 'a', text: 'We are just learning about AI and are not sure how it would work in our government entity' },
-      { value: 'b', text: 'We have just begun training and developing AI models through POCs' },
-      { value: 'c', text: 'We are moving from AI POCs to Minimal Viable Products (MVPs)' },
-      { value: 'd', text: 'We have deployed multiple MVPs in production and working on scaling and maintaining them' },
-      { value: 'e', text: 'We have successfully integrated AI-based products into government operations or services' }
-    ]
-  },
-  {
-    id: 'q4',
-    question: 'Are you using any industrialized methodology for AI use case development?',
-    options: [
-      { value: 'a', text: 'We have not identified any AI use cases yet' },
-      { value: 'b', text: 'The few Proof of Concepts (POCs) are profiled and described ad-hoc, without any standardization' },
-      { value: 'c', text: 'While not yet implemented, we have defined a systematic way of defining minimal attributes of an AI use case such as the problem statement, stakeholders involved and beneficiaries' },
-      { value: 'd', text: 'Our use case definition approach is being expanded to include details such as the data sourcing plan, the target solution architecture, and the operation plan' },
-      { value: 'e', text: 'We have developed a unique standard procedure to profile and detail all AI use cases consistently across the government entity' }
-    ]
-  },
-  {
-    id: 'q5',
-    question: 'Do you have access to all the data you need to experiment with AI?',
-    options: [
-      { value: 'a', text: 'We have challenges in accessing the data needed for our AI initiatives' },
-      { value: 'b', text: 'We have limited access to data to begin building our POCs and it takes us time to collect it' },
-      { value: 'c', text: 'Essential data is available and accessible to build AI models' },
-      { value: 'd', text: 'Our data is documented in a data catalog, making it easy to identify and access to build our AI algorithms' },
-      { value: 'e', text: 'We make our data accessible across the entire entity in a proactive and efficient manner' }
-    ]
-  },
-  {
-    id: 'q6',
-    question: 'Is the data you intend to use in your AI models of good quality?',
-    options: [
-      { value: 'a', text: 'We do not know how good the quality of our data is since no data quality measures or processes are defined' },
-      { value: 'b', text: 'We perform ad-hoc data quality activities in our data' },
-      { value: 'c', text: 'We have begun to standardize data quality across the entity and work on improving it' },
-      { value: 'd', text: 'We have standard data quality practices guided by a data quality program, including frameworks, processes and guidelines, with regular monitoring and improvement' },
-      { value: 'e', text: 'We are actively evolving our data quality efforts, supported by automated infrastructure and tools' }
-    ]
-  },
-  {
-    id: 'q7',
-    question: 'What platforms and tools are available to you for designing and deploying your AI algorithms?',
-    options: [
-      { value: 'a', text: 'We do not have the tools to develop AI' },
-      { value: 'b', text: 'We have limited access to artificial intelligence technologies, but plan to invest in this area in the future' },
-      { value: 'c', text: 'We have a set of industrialized AI tools to implement AI models' },
-      { value: 'd', text: 'We are deploying an AI platform to deploy the AI models and provide easy access to AI' },
-      { value: 'e', text: 'We have a scalable and centralized AI platform integrated across the entire entity to deploy AI models and streamline data access from ingestion to consumption' }
-    ]
-  },
-  {
-    id: 'q8',
-    question: 'What type of computing infrastructure do you have available for AI development and operations?',
-    options: [
-      { value: 'a', text: 'We do not know what computing infrastructure is available for AI' },
-      { value: 'b', text: 'We rely on our desktops to explore with AI locally' },
-      { value: 'c', text: 'We rely on a sandbox environment to test out some AI applications' },
-      { value: 'd', text: 'We have dedicated servers for AI that optimize performance and resource allocation' },
-      { value: 'e', text: 'Our infrastructure is optimized by AI to predict fluctuations in workload and scale resources automatically' }
-    ]
-  },
-  {
-    id: 'q9',
-    question: 'Has your entity established AI roles and responsibilities?',
-    options: [
-      { value: 'a', text: 'We have not dedicated AI roles and responsibilities' },
-      { value: 'b', text: 'We are starting to recruit AI specialists and defining the different roles and responsibilities' },
-      { value: 'c', text: 'We have established an AI organization with defined roles and responsibilities, but it is currently understaffed' },
-      { value: 'd', text: 'Our AI organization structure has been properly sized and formalized, and its responsibilities have been clearly defined' },
-      { value: 'e', text: 'AI is an integral part of our organization, sponsored by top leadership and driven by AI champions' }
-    ]
-  },
-  {
-    id: 'q10',
-    question: 'How is your entity developing AI knowledge and upskilling AI capabilities?',
-    options: [
-      { value: 'a', text: 'We have not included AI in our learning program' },
-      { value: 'b', text: 'We provide ad-hoc training to some of our employees who have demonstrated an interest in AI' },
-      { value: 'c', text: 'Some roles are required to complete specific training courses in order to improve their AI capabilities' },
-      { value: 'd', text: 'Our AI organization has outlined a comprehensive learning path for all its roles' },
-      { value: 'e', text: 'The development of AI literacy is a key component of our capacity building program, and all employees of the company have access to AI training courses' }
-    ]
-  },
-  {
-    id: 'q11',
-    question: 'What degree of governance has been established to enable AI?',
-    options: [
-      { value: 'a', text: 'We have no structure yet to govern AI' },
-      { value: 'b', text: 'We are discussing the concepts associated with establishing a governance structure' },
-      { value: 'c', text: 'We are developing an AI Governance model across the entity in line with the different departments and control functions' },
-      { value: 'd', text: 'We have defined the roles and responsibilities for every board and committee, and we are planning to conduct an extensive monitoring of the various AI initiatives' },
-      { value: 'e', text: 'The AI governance structure has been successfully implemented across the organization, with working committees established and clear accountabilities across different stakeholders' }
-    ]
-  },
-  {
-    id: 'q12',
-    question: 'Is your organization taking any activities to ensure that AI is ethical and responsible? (no bias, no violation of privacy, etc.)',
-    options: [
-      { value: 'a', text: 'We are beginning to educate ourselves about responsible AI and AI ethics' },
-      { value: 'b', text: 'We are providing high-level guidance on ethical and AI usage' },
-      { value: 'c', text: 'We have developed AI ethical principles and policies' },
-      { value: 'd', text: 'We are committed to enabling and executing ethical AI practices through the use of dedicated tools and operational metrics' },
-      { value: 'e', text: 'Our AI ethics practices are an integral part of our entity' }
-    ]
-  },
-  {
-    id: 'q13',
-    question: 'Have you established dedicated AI partnerships to advance your AI agenda?',
-    options: [
-      { value: 'a', text: 'We have not identified any AI partnerships' },
-      { value: 'b', text: 'We have initiated the process to identify AI partnerships, but we have not formalized any' },
-      { value: 'c', text: 'We have formalized at least one AI partnership' },
-      { value: 'd', text: 'We have a solid partnership network and we are expanding it across the government and industries' },
-      { value: 'e', text: 'We have expanded our AI partnership network to the academia to become a leader in AI and advance related R&D' }
-    ]
-  }
-];
+/* ------------------------------------------------------------------ */
+/*  Shared atoms                                                        */
+/* ------------------------------------------------------------------ */
 
-const calculateDimensionScore = (answers, questionIds) => {
-  const scores = questionIds.map(id => scoreMapping[answers[id] || 'a']);
-  return scores.reduce((a, b) => a + b, 0) / scores.length;
-};
+const ACCENT = 'var(--accent)';
+const RAU_RED = '#E0552B';
+const HEALTHY_GREEN = '#8FBF7A';
 
-const AIReadiness = () => {
-  const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [answers, setAnswers] = useState({});
-  const [showReport, setShowReport] = useState(false);
+function PrimaryButton({
+  children,
+  onClick,
+  disabled,
+  type = 'button',
+  style,
+}: {
+  children: React.ReactNode;
+  onClick?: () => void;
+  disabled?: boolean;
+  type?: 'button' | 'submit';
+  style?: React.CSSProperties;
+}) {
+  const [hover, setHover] = useState(false);
+  return (
+    <button
+      type={type}
+      onClick={onClick}
+      disabled={disabled}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      style={{
+        background: disabled ? 'var(--paper-2)' : ACCENT,
+        color: disabled ? 'var(--muted)' : 'var(--paper)',
+        border: 'none',
+        padding: '14px 26px',
+        fontFamily: 'var(--mono)',
+        fontSize: 12,
+        letterSpacing: '0.16em',
+        textTransform: 'uppercase',
+        cursor: disabled ? 'not-allowed' : 'pointer',
+        transition: 'transform .15s ease, opacity .15s ease',
+        transform: !disabled && hover ? 'translateY(-1px)' : 'none',
+        opacity: disabled ? 0.55 : 1,
+        ...style,
+      }}
+    >
+      {children}
+    </button>
+  );
+}
 
-  const handleAnswer = (questionId, value) => {
-    setAnswers(prev => ({ ...prev, [questionId]: value }));
-  };
+function GhostButton({
+  children,
+  onClick,
+  disabled,
+  style,
+}: {
+  children: React.ReactNode;
+  onClick?: () => void;
+  disabled?: boolean;
+  style?: React.CSSProperties;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      style={{
+        background: 'transparent',
+        color: disabled ? 'var(--muted)' : 'var(--ink)',
+        border: '1px solid var(--line-strong)',
+        padding: '14px 26px',
+        fontFamily: 'var(--mono)',
+        fontSize: 12,
+        letterSpacing: '0.16em',
+        textTransform: 'uppercase',
+        cursor: disabled ? 'not-allowed' : 'pointer',
+        opacity: disabled ? 0.55 : 1,
+        ...style,
+      }}
+    >
+      {children}
+    </button>
+  );
+}
 
-  const handleNext = () => {
-    if (currentQuestion < questions.length - 1) {
-      setCurrentQuestion(prev => prev + 1);
-    } else {
-      setShowReport(true);
-    }
-  };
+function MonoEyebrow({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
+  return (
+    <div
+      style={{
+        fontFamily: 'var(--mono)',
+        fontSize: 11,
+        letterSpacing: '0.22em',
+        textTransform: 'uppercase',
+        color: 'var(--muted)',
+        marginBottom: 14,
+        ...style,
+      }}
+    >
+      {children}
+    </div>
+  );
+}
 
-  const handlePrevious = () => {
-    if (currentQuestion > 0) {
-      setCurrentQuestion(prev => prev - 1);
-    }
-  };
+function StepIntroFrame({
+  index,
+  total,
+  kicker,
+  title,
+  italic,
+  children,
+  onBack,
+  onNext,
+  nextLabel = 'Continue',
+}: {
+  index: number;
+  total: number;
+  kicker: string;
+  title: string;
+  italic?: string;
+  children: React.ReactNode;
+  onBack?: () => void;
+  onNext: () => void;
+  nextLabel?: string;
+}) {
+  return (
+    <section style={{ padding: '120px 0 80px', borderBottom: '1px solid var(--line)' }}>
+      <Container>
+        <Eyebrow style={{ marginBottom: 28 }}>{kicker}</Eyebrow>
+        <DisplayHead size="clamp(34px, 5vw, 64px)" style={{ marginBottom: 32, maxWidth: 1100 }}>
+          {title}
+          {italic && (
+            <>
+              {' '}
+              <GoldItalic>{italic}</GoldItalic>
+            </>
+          )}
+        </DisplayHead>
+        <div style={{ maxWidth: 1200, marginBottom: 56 }}>{children}</div>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            borderTop: '1px solid var(--line)',
+            paddingTop: 28,
+          }}
+        >
+          <div style={{ fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: '0.16em', color: 'var(--muted)' }}>
+            Step {String(index).padStart(2, '0')} / {String(total).padStart(2, '0')}
+          </div>
+          <div style={{ display: 'flex', gap: 12 }}>
+            {onBack && <GhostButton onClick={onBack}>Back</GhostButton>}
+            <PrimaryButton onClick={onNext}>{nextLabel} &rarr;</PrimaryButton>
+          </div>
+        </div>
+      </Container>
+    </section>
+  );
+}
 
-  const calculateOverallScore = () => {
-    const dimensionScores = Object.entries(dimensions).map(([dimension, questionIds]) => ({
-      dimension,
-      score: calculateDimensionScore(answers, questionIds)
-    }));
+/* ------------------------------------------------------------------ */
+/*  Intro: Concepts                                                     */
+/* ------------------------------------------------------------------ */
+
+function IntroConcepts({ index, total, onNext }: { index: number; total: number; onNext: () => void }) {
+  return (
+    <StepIntroFrame
+      index={index}
+      total={total}
+      kicker="01 / Before you begin"
+      title="A dual-axis"
+      italic="readiness model."
+      onNext={onNext}
+    >
+      <p style={{ fontSize: 19, lineHeight: 1.55, color: 'var(--ink)', maxWidth: 880, margin: '0 0 32px' }}>
+        Every dimension in this assessment is measured on two independent axes — not just "how mature are we?" but
+        "how well do we control the risk?" Treating them as one number is what produces AI programmes that scale
+        capability faster than safety.
+      </p>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 4 }}>
+        {[
+          {
+            tag: 'Axis 01',
+            title: 'Capability',
+            body: 'How well do we do this? Scored 1 (Initial) to 5 (Optimizing) against a dimension-specific rubric.',
+          },
+          {
+            tag: 'Axis 02',
+            title: 'Risk Maturity',
+            body: 'How well do we control the risk of this? One of four NIST AI RMF tiers: Partial, Risk-Informed, Repeatable, Adaptive.',
+          },
+          {
+            tag: 'Plus',
+            title: 'Target',
+            body: 'Where you want capability to land given the AI system’s risk class. Today’s gap = target − current.',
+          },
+        ].map((c) => (
+          <div
+            key={c.title}
+            style={{ background: 'var(--paper-2)', padding: '32px 28px 28px', borderRadius: 4 }}
+          >
+            <MonoEyebrow style={{ color: ACCENT }}>{c.tag}</MonoEyebrow>
+            <h3
+              style={{
+                fontFamily: 'var(--display)',
+                fontSize: 26,
+                lineHeight: 1.2,
+                letterSpacing: '-0.01em',
+                margin: '0 0 12px',
+              }}
+            >
+              {c.title}
+            </h3>
+            <p style={{ fontSize: 15, lineHeight: 1.6, color: 'var(--muted)', margin: 0 }}>{c.body}</p>
+          </div>
+        ))}
+      </div>
+      <div
+        style={{
+          marginTop: 40,
+          padding: '24px 28px',
+          background: 'var(--paper-2)',
+          borderLeft: `3px solid ${RAU_RED}`,
+        }}
+      >
+        <MonoEyebrow style={{ color: RAU_RED }}>RAU — racing ahead unsafely</MonoEyebrow>
+        <p style={{ margin: 0, fontSize: 15, lineHeight: 1.6, color: 'var(--ink)' }}>
+          When capability runs ahead of risk maturity (capability &ge; 4 with a Partial or Risk-Informed tier),
+          the dimension is flagged red on the dashboard. It’s the framework’s explicit danger signal —
+          pause capability investment until risk maturity catches up.
+        </p>
+      </div>
+    </StepIntroFrame>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Intro: Answer scales                                                */
+/* ------------------------------------------------------------------ */
+
+function IntroScales({
+  index,
+  total,
+  onBack,
+  onNext,
+}: {
+  index: number;
+  total: number;
+  onBack: () => void;
+  onNext: () => void;
+}) {
+  return (
+    <StepIntroFrame
+      index={index}
+      total={total}
+      kicker="02 / Before you begin"
+      title="The two"
+      italic="answer scales."
+      onBack={onBack}
+      onNext={onNext}
+    >
+      <p style={{ fontSize: 17, lineHeight: 1.55, color: 'var(--ink)', maxWidth: 880, margin: '0 0 36px' }}>
+        Each of the 52 dimensions has its own rubric text, but the five capability levels and four NIST tiers
+        below are the universal anchors.
+      </p>
+
+      <h3 style={{ fontFamily: 'var(--display)', fontSize: 22, margin: '0 0 16px' }}>
+        Capability scale <span style={{ color: 'var(--muted)', fontSize: 14, marginLeft: 8 }}>(1 – 5)</span>
+      </h3>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 4, marginBottom: 48 }}>
+        {CAPABILITY_LEVELS.map((lv) => (
+          <div key={lv.value} style={{ background: 'var(--paper-2)', padding: '24px 22px 22px' }}>
+            <div style={{ fontFamily: 'var(--mono)', fontSize: 12, color: ACCENT, marginBottom: 10 }}>
+              {lv.value} / 5
+            </div>
+            <div
+              style={{
+                fontFamily: 'var(--display)',
+                fontSize: 18,
+                fontWeight: 600,
+                margin: '0 0 8px',
+                color: 'var(--ink)',
+              }}
+            >
+              {lv.name}
+            </div>
+            <p style={{ fontSize: 13, lineHeight: 1.55, color: 'var(--muted)', margin: 0 }}>{lv.definition}</p>
+          </div>
+        ))}
+      </div>
+
+      <h3 style={{ fontFamily: 'var(--display)', fontSize: 22, margin: '0 0 16px' }}>
+        NIST AI RMF risk-maturity tiers
+      </h3>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 4 }}>
+        {NIST_TIERS.map((t) => (
+          <div key={t.id} style={{ background: 'var(--paper-2)', padding: '24px 22px 22px' }}>
+            <div style={{ fontFamily: 'var(--mono)', fontSize: 12, color: ACCENT, marginBottom: 10 }}>{t.id}</div>
+            <div
+              style={{
+                fontFamily: 'var(--display)',
+                fontSize: 18,
+                fontWeight: 600,
+                margin: '0 0 8px',
+                color: 'var(--ink)',
+              }}
+            >
+              {t.name}
+            </div>
+            <p style={{ fontSize: 13, lineHeight: 1.55, color: 'var(--muted)', margin: 0 }}>{t.meaning}</p>
+          </div>
+        ))}
+      </div>
+    </StepIntroFrame>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Intro: Weighting profile                                            */
+/* ------------------------------------------------------------------ */
+
+function IntroWeighting({
+  index,
+  total,
+  profile,
+  setProfile,
+  onBack,
+  onNext,
+}: {
+  index: number;
+  total: number;
+  profile: WeightingProfileId;
+  setProfile: (p: WeightingProfileId) => void;
+  onBack: () => void;
+  onNext: () => void;
+}) {
+  return (
+    <StepIntroFrame
+      index={index}
+      total={total}
+      kicker="03 / Before you begin"
+      title="Pick a"
+      italic="weighting profile."
+      onBack={onBack}
+      onNext={onNext}
+    >
+      <p style={{ fontSize: 17, lineHeight: 1.55, color: 'var(--ink)', maxWidth: 880, margin: '0 0 36px' }}>
+        The org-wide composite score weights pillars differently depending on industry and stage. You can change
+        the profile at the end and recompute.
+      </p>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 4 }}>
+        {WEIGHTING_PROFILES.map((p) => {
+          const active = profile === p.id;
+          return (
+            <button
+              key={p.id}
+              type="button"
+              onClick={() => setProfile(p.id)}
+              style={{
+                textAlign: 'left',
+                background: active ? 'var(--paper-light)' : 'var(--paper-2)',
+                color: active ? 'var(--ink-on-light)' : 'var(--ink)',
+                border: active ? `2px solid ${ACCENT}` : '2px solid transparent',
+                padding: '28px 26px',
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                transition: 'background .15s ease',
+              }}
+            >
+              <div
+                style={{
+                  fontFamily: 'var(--mono)',
+                  fontSize: 11,
+                  letterSpacing: '0.18em',
+                  textTransform: 'uppercase',
+                  color: ACCENT,
+                  marginBottom: 12,
+                }}
+              >
+                Profile / {p.id}
+              </div>
+              <div
+                style={{
+                  fontFamily: 'var(--display)',
+                  fontSize: 22,
+                  fontWeight: 600,
+                  marginBottom: 10,
+                }}
+              >
+                {p.name}
+              </div>
+              <p
+                style={{
+                  fontSize: 14,
+                  lineHeight: 1.55,
+                  color: active ? 'var(--muted-on-light)' : 'var(--muted)',
+                  margin: 0,
+                }}
+              >
+                {p.description}
+              </p>
+            </button>
+          );
+        })}
+      </div>
+
+      <div style={{ marginTop: 40 }}>
+        <MonoEyebrow>Per-pillar weights ({profile})</MonoEyebrow>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+            gap: 4,
+          }}
+        >
+          {PILLARS.map((p) => (
+            <div key={p.id} style={{ background: 'var(--paper-2)', padding: '16px 18px' }}>
+              <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: ACCENT, letterSpacing: '0.16em' }}>
+                {p.id}
+              </div>
+              <div style={{ fontSize: 13, color: 'var(--muted)', margin: '4px 0 8px' }}>{p.name}</div>
+              <div style={{ fontFamily: 'var(--display)', fontSize: 22, color: 'var(--ink)' }}>
+                {p.weights[profile].toFixed(1)}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </StepIntroFrame>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Intro: Sections overview                                            */
+/* ------------------------------------------------------------------ */
+
+function IntroSections({
+  index,
+  total,
+  onBack,
+  onNext,
+}: {
+  index: number;
+  total: number;
+  onBack: () => void;
+  onNext: () => void;
+}) {
+  return (
+    <StepIntroFrame
+      index={index}
+      total={total}
+      kicker="04 / Before you begin"
+      title="Nine pillars,"
+      italic="fifty-two questions."
+      onBack={onBack}
+      onNext={onNext}
+    >
+      <p style={{ fontSize: 17, lineHeight: 1.55, color: 'var(--ink)', maxWidth: 880, margin: '0 0 36px' }}>
+        The assessment walks you through 9 pillars in order. You can move freely between questions and revisit
+        anything. Allow ~45–60 minutes for a complete pass.
+      </p>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 4 }}>
+        {PILLARS.map((p) => {
+          const qCount = QUESTIONS_BY_PILLAR[p.id]?.length ?? 0;
+          return (
+            <div key={p.id} style={{ background: 'var(--paper-2)', padding: '28px 26px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10 }}>
+                <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: ACCENT, letterSpacing: '0.16em' }}>
+                  {p.id}
+                </span>
+                <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--muted)' }}>
+                  {qCount} questions
+                </span>
+              </div>
+              <div
+                style={{
+                  fontFamily: 'var(--display)',
+                  fontSize: 20,
+                  fontWeight: 600,
+                  lineHeight: 1.2,
+                  margin: '0 0 10px',
+                  color: 'var(--ink)',
+                }}
+              >
+                {p.name}
+              </div>
+              <p style={{ fontSize: 13.5, lineHeight: 1.55, color: 'var(--muted)', margin: 0 }}>{p.purpose}</p>
+            </div>
+          );
+        })}
+      </div>
+    </StepIntroFrame>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Intro: Setup                                                        */
+/* ------------------------------------------------------------------ */
+
+function IntroSetup({
+  index,
+  total,
+  orgName,
+  setOrgName,
+  onBack,
+  onStart,
+}: {
+  index: number;
+  total: number;
+  orgName: string;
+  setOrgName: (v: string) => void;
+  onBack: () => void;
+  onStart: () => void;
+}) {
+  return (
+    <StepIntroFrame
+      index={index}
+      total={total}
+      kicker="05 / Before you begin"
+      title="One last thing"
+      italic="and we'll start."
+      onBack={onBack}
+      onNext={onStart}
+      nextLabel="Start assessment"
+    >
+      <p style={{ fontSize: 17, lineHeight: 1.55, color: 'var(--ink)', maxWidth: 760, margin: '0 0 28px' }}>
+        Tag your assessment with an organization name so the exported JSON report carries the right label. This
+        runs entirely in your browser — nothing is uploaded.
+      </p>
+      <label style={{ display: 'block', maxWidth: 560 }}>
+        <span
+          style={{
+            display: 'block',
+            fontFamily: 'var(--mono)',
+            fontSize: 11,
+            letterSpacing: '0.18em',
+            textTransform: 'uppercase',
+            color: 'var(--muted)',
+            marginBottom: 10,
+          }}
+        >
+          Organization name (optional)
+        </span>
+        <input
+          type="text"
+          value={orgName}
+          onChange={(e) => setOrgName(e.target.value)}
+          placeholder="e.g. Example Corp"
+          style={{
+            width: '100%',
+            background: 'var(--paper-2)',
+            color: 'var(--ink)',
+            border: '1px solid var(--line-strong)',
+            padding: '16px 18px',
+            fontFamily: 'var(--sans)',
+            fontSize: 16,
+          }}
+        />
+      </label>
+    </StepIntroFrame>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Question screen                                                     */
+/* ------------------------------------------------------------------ */
+
+function QuestionScreen({
+  pillarIndex,
+  qInPillar,
+  responses,
+  setResponse,
+  onPrev,
+  onNext,
+}: {
+  pillarIndex: number;
+  qInPillar: number;
+  responses: Record<string, AssessResponse>;
+  setResponse: (r: AssessResponse) => void;
+  onPrev: () => void;
+  onNext: () => void;
+}) {
+  const pillar = PILLARS[pillarIndex];
+  const pillarQs = QUESTIONS_BY_PILLAR[pillar.id] ?? [];
+  const q = pillarQs[qInPillar];
+  const dim = DIMENSION_BY_ID[q.dimension_id];
+  const r = responses[q.id] ?? { questionId: q.id, current: null, target: null, nistTier: null };
+
+  const answered = QUESTIONS.findIndex((x) => x.id === q.id);
+  const globalIndex = answered + 1;
+
+  const update = (patch: Partial<AssessResponse>) =>
+    setResponse({ ...r, questionId: q.id, ...patch });
+
+  const isFirstEver = pillarIndex === 0 && qInPillar === 0;
+  const complete = r.current != null && r.target != null && r.nistTier != null;
+
+  return (
+    <section style={{ padding: '80px 0 60px' }}>
+      <Container>
+        {/* Top progress strip */}
+        <div style={{ marginBottom: 40 }}>
+          <div
+            style={{
+              fontFamily: 'var(--mono)',
+              fontSize: 11,
+              letterSpacing: '0.18em',
+              color: 'var(--muted)',
+              textTransform: 'uppercase',
+              display: 'flex',
+              justifyContent: 'space-between',
+              marginBottom: 12,
+            }}
+          >
+            <span>
+              {pillar.id} · {pillar.name}
+            </span>
+            <span>
+              Question {globalIndex} / {QUESTIONS.length}
+            </span>
+          </div>
+          <div style={{ height: 2, background: 'var(--paper-2)', position: 'relative' }}>
+            <div
+              style={{
+                height: '100%',
+                background: ACCENT,
+                width: `${(globalIndex / QUESTIONS.length) * 100}%`,
+                transition: 'width .3s ease',
+              }}
+            />
+          </div>
+          <div style={{ display: 'flex', gap: 4, marginTop: 16, flexWrap: 'wrap' }}>
+            {PILLARS.map((p, i) => (
+              <span
+                key={p.id}
+                style={{
+                  fontFamily: 'var(--mono)',
+                  fontSize: 9,
+                  letterSpacing: '0.18em',
+                  padding: '4px 8px',
+                  background: i === pillarIndex ? ACCENT : 'var(--paper-2)',
+                  color: i === pillarIndex ? 'var(--paper)' : i < pillarIndex ? 'var(--ink)' : 'var(--muted)',
+                  textTransform: 'uppercase',
+                }}
+              >
+                {p.id}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        {/* Header */}
+        <MonoEyebrow style={{ color: ACCENT }}>
+          {q.id} · {dim.name}
+        </MonoEyebrow>
+        <h2
+          style={{
+            fontFamily: 'var(--display)',
+            fontSize: 'clamp(24px, 3.4vw, 36px)',
+            lineHeight: 1.2,
+            letterSpacing: '-0.01em',
+            color: 'var(--ink)',
+            margin: '0 0 24px',
+            maxWidth: 1000,
+          }}
+        >
+          {q.prompt}
+        </h2>
+
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+            gap: 4,
+            marginBottom: 36,
+            background: 'var(--paper-2)',
+            padding: 4,
+          }}
+        >
+          <div style={{ padding: '22px 24px' }}>
+            <MonoEyebrow>What it covers</MonoEyebrow>
+            <p style={{ fontSize: 14.5, lineHeight: 1.6, color: 'var(--ink-2)', margin: 0 }}>{dim.what_it_covers}</p>
+          </div>
+          <div style={{ padding: '22px 24px' }}>
+            <MonoEyebrow>Why it matters</MonoEyebrow>
+            <p style={{ fontSize: 14.5, lineHeight: 1.6, color: 'var(--ink-2)', margin: 0 }}>{dim.why_it_matters}</p>
+          </div>
+        </div>
+
+        {/* Current capability picker */}
+        <ScalePicker
+          label="Your current capability"
+          accentLetter="A"
+          value={r.current}
+          options={CAPABILITY_LEVELS.map((lv) => ({
+            value: lv.value,
+            head: `${lv.value} / 5 · ${lv.name}`,
+            body: dim.rubric[String(lv.value)] ?? lv.definition,
+          }))}
+          onSelect={(v) => update({ current: v as CapabilityLevel })}
+        />
+
+        {/* Target capability picker */}
+        <ScalePicker
+          label="Where you want to be (target)"
+          accentLetter="B"
+          value={r.target}
+          options={CAPABILITY_LEVELS.map((lv) => ({
+            value: lv.value,
+            head: `${lv.value} / 5 · ${lv.name}`,
+            body: dim.rubric[String(lv.value)] ?? lv.definition,
+          }))}
+          onSelect={(v) => update({ target: v as CapabilityLevel })}
+        />
+
+        {/* NIST tier picker */}
+        <ScalePicker
+          label="NIST risk-maturity tier (today)"
+          accentLetter="C"
+          value={r.nistTier}
+          options={NIST_TIERS.map((t) => ({
+            value: t.id,
+            head: t.name,
+            body: dim.nist_tier_profile[t.id] || t.meaning,
+          }))}
+          onSelect={(v) => update({ nistTier: v as NistTier })}
+        />
+
+        {dim.common_pitfalls.length > 0 && (
+          <div style={{ background: 'var(--paper-2)', padding: '20px 24px', marginBottom: 32 }}>
+            <MonoEyebrow>Common pitfalls</MonoEyebrow>
+            <ul style={{ margin: 0, paddingLeft: 18 }}>
+              {dim.common_pitfalls.map((p, i) => (
+                <li key={i} style={{ fontSize: 14, lineHeight: 1.6, color: 'var(--muted)', marginBottom: 4 }}>
+                  {p}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {/* Nav */}
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            borderTop: '1px solid var(--line)',
+            paddingTop: 28,
+            marginTop: 16,
+          }}
+        >
+          <GhostButton onClick={onPrev} disabled={isFirstEver}>
+            &larr; Back
+          </GhostButton>
+          <PrimaryButton onClick={onNext} disabled={!complete}>
+            {qInPillar === pillarQs.length - 1 ? 'Section summary' : 'Next question'} &rarr;
+          </PrimaryButton>
+        </div>
+      </Container>
+    </section>
+  );
+}
+
+function ScalePicker<T extends number | string>({
+  label,
+  accentLetter,
+  value,
+  options,
+  onSelect,
+}: {
+  label: string;
+  accentLetter: string;
+  value: T | null;
+  options: { value: T; head: string; body: string }[];
+  onSelect: (v: T) => void;
+}) {
+  return (
+    <div style={{ marginBottom: 28 }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 14 }}>
+        <span
+          style={{
+            display: 'inline-flex',
+            width: 24,
+            height: 24,
+            borderRadius: '50%',
+            background: ACCENT,
+            color: 'var(--paper)',
+            fontFamily: 'var(--mono)',
+            fontSize: 11,
+            fontWeight: 700,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          {accentLetter}
+        </span>
+        <h3 style={{ fontFamily: 'var(--display)', fontSize: 18, margin: 0, color: 'var(--ink)' }}>{label}</h3>
+      </div>
+      <div style={{ display: 'grid', gap: 2 }}>
+        {options.map((opt) => {
+          const active = value === opt.value;
+          return (
+            <button
+              key={String(opt.value)}
+              type="button"
+              onClick={() => onSelect(opt.value)}
+              style={{
+                textAlign: 'left',
+                background: active ? 'var(--paper-light)' : 'var(--paper-2)',
+                color: active ? 'var(--ink-on-light)' : 'var(--ink)',
+                border: active ? `2px solid ${ACCENT}` : '2px solid transparent',
+                padding: '16px 20px',
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                display: 'flex',
+                gap: 18,
+                alignItems: 'flex-start',
+              }}
+            >
+              <span
+                style={{
+                  display: 'inline-flex',
+                  width: 18,
+                  height: 18,
+                  borderRadius: '50%',
+                  border: `2px solid ${active ? ACCENT : 'var(--line-strong)'}`,
+                  background: active ? ACCENT : 'transparent',
+                  flexShrink: 0,
+                  marginTop: 3,
+                }}
+              />
+              <span style={{ flex: 1 }}>
+                <span
+                  style={{
+                    display: 'block',
+                    fontFamily: 'var(--mono)',
+                    fontSize: 11,
+                    letterSpacing: '0.14em',
+                    textTransform: 'uppercase',
+                    color: active ? ACCENT : 'var(--muted)',
+                    marginBottom: 6,
+                  }}
+                >
+                  {opt.head}
+                </span>
+                <span
+                  style={{
+                    display: 'block',
+                    fontSize: 14.5,
+                    lineHeight: 1.55,
+                    color: active ? 'var(--ink-on-light)' : 'var(--ink-2)',
+                  }}
+                >
+                  {opt.body}
+                </span>
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Pillar summary                                                      */
+/* ------------------------------------------------------------------ */
+
+function PillarSummary({
+  pillarIndex,
+  responses,
+  profile,
+  onBack,
+  onNext,
+}: {
+  pillarIndex: number;
+  responses: Record<string, AssessResponse>;
+  profile: WeightingProfileId;
+  onBack: () => void;
+  onNext: () => void;
+}) {
+  const pillar = PILLARS[pillarIndex];
+  const pillarQs = QUESTIONS_BY_PILLAR[pillar.id] ?? [];
+  const responseList = pillarQs.map((q) => responses[q.id]).filter(Boolean) as AssessResponse[];
+
+  const currents = responseList.map((r) => r.current).filter((v): v is CapabilityLevel => v != null);
+  const targets = responseList.map((r) => r.target).filter((v): v is CapabilityLevel => v != null);
+  const avg = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
+
+  const rauResponses = responseList.filter(isRau);
+  const healthyResponses = responseList.filter(isHealthy);
+  const isLastPillar = pillarIndex === PILLARS.length - 1;
+
+  return (
+    <section style={{ padding: '100px 0 80px' }}>
+      <Container>
+        <MonoEyebrow>
+          {pillar.id} · weight {pillar.weights[profile].toFixed(1)} ({profile})
+        </MonoEyebrow>
+        <DisplayHead size="clamp(36px, 5vw, 60px)" style={{ marginBottom: 24, maxWidth: 1000 }}>
+          {pillar.name} <GoldItalic>summary.</GoldItalic>
+        </DisplayHead>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 4, marginBottom: 40 }}>
+          <Stat label="Current avg" value={avg(currents).toFixed(2)} />
+          <Stat label="Target avg" value={avg(targets).toFixed(2)} />
+          <Stat label="Gap avg" value={(avg(targets) - avg(currents)).toFixed(2)} />
+          <Stat label="RAU flags" value={rauResponses.length} accent={rauResponses.length > 0 ? RAU_RED : undefined} />
+          <Stat label="Healthy dims" value={healthyResponses.length} accent={healthyResponses.length > 0 ? HEALTHY_GREEN : undefined} />
+        </div>
+
+        <h3 style={{ fontFamily: 'var(--display)', fontSize: 22, margin: '40px 0 16px' }}>By dimension</h3>
+        <div style={{ display: 'grid', gap: 2 }}>
+          {pillarQs.map((q) => {
+            const r = responses[q.id];
+            const dim = DIMENSION_BY_ID[q.dimension_id];
+            const rau = r ? isRau(r) : false;
+            const healthy = r ? isHealthy(r) : false;
+            const gap = r ? dimensionGap(r) : null;
+            return (
+              <div
+                key={q.id}
+                style={{
+                  background: 'var(--paper-2)',
+                  padding: '18px 22px',
+                  display: 'grid',
+                  gridTemplateColumns: '1fr auto auto auto auto',
+                  gap: 20,
+                  alignItems: 'center',
+                  borderLeft: rau ? `3px solid ${RAU_RED}` : healthy ? `3px solid ${HEALTHY_GREEN}` : '3px solid transparent',
+                }}
+              >
+                <span style={{ color: 'var(--ink)' }}>
+                  <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: ACCENT, marginRight: 10 }}>
+                    {q.id}
+                  </span>
+                  {dim.name}
+                </span>
+                <Pill label={r?.current != null ? `${r.current}` : '—'} hint="Current" />
+                <Pill label={r?.target != null ? `${r.target}` : '—'} hint="Target" />
+                <Pill label={gap != null ? gapPriority(gap) : '—'} hint="Gap" />
+                <Pill label={r?.nistTier ?? '—'} hint="Tier" />
+              </div>
+            );
+          })}
+        </div>
+
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            borderTop: '1px solid var(--line)',
+            paddingTop: 28,
+            marginTop: 48,
+          }}
+        >
+          <GhostButton onClick={onBack}>&larr; Back to questions</GhostButton>
+          <PrimaryButton onClick={onNext}>
+            {isLastPillar ? 'See dashboard' : `Continue to ${PILLARS[pillarIndex + 1].name}`} &rarr;
+          </PrimaryButton>
+        </div>
+      </Container>
+    </section>
+  );
+}
+
+function Stat({ label, value, accent }: { label: string; value: string | number; accent?: string }) {
+  return (
+    <div style={{ background: 'var(--paper-2)', padding: '22px 22px 20px' }}>
+      <div
+        style={{
+          fontFamily: 'var(--mono)',
+          fontSize: 10,
+          letterSpacing: '0.18em',
+          textTransform: 'uppercase',
+          color: 'var(--muted)',
+          marginBottom: 8,
+        }}
+      >
+        {label}
+      </div>
+      <div
+        style={{
+          fontFamily: 'var(--display)',
+          fontSize: 36,
+          color: accent ?? ACCENT,
+          lineHeight: 1,
+        }}
+      >
+        {value}
+      </div>
+    </div>
+  );
+}
+
+function Pill({ label, hint }: { label: string | number; hint: string }) {
+  return (
+    <div
+      style={{
+        textAlign: 'center',
+        fontFamily: 'var(--mono)',
+        fontSize: 11,
+        color: 'var(--muted)',
+      }}
+    >
+      <div style={{ color: 'var(--ink)', fontSize: 14, marginBottom: 2 }}>{label}</div>
+      <div style={{ letterSpacing: '0.14em', textTransform: 'uppercase' }}>{hint}</div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Dashboard                                                           */
+/* ------------------------------------------------------------------ */
+
+function Dashboard({
+  responses,
+  profile,
+  setProfile,
+  orgName,
+  onRestart,
+}: {
+  responses: Record<string, AssessResponse>;
+  profile: WeightingProfileId;
+  setProfile: (p: WeightingProfileId) => void;
+  orgName: string;
+  onRestart: () => void;
+}) {
+  const responseList = QUESTIONS.map(
+    (q) => responses[q.id] ?? { questionId: q.id, current: null, target: null, nistTier: null },
+  );
+  const roll = useMemo(() => orgRollup(profile, responseList), [profile, responseList]);
+
+  const radarData = useMemo(() => {
     return {
-      overall: dimensionScores.reduce((acc, curr) => acc + curr.score, 0) / Object.keys(dimensions).length,
-      dimensions: dimensionScores
-    };
-  };
-
-  const getMaturityLevel = (score) => {
-    if (score >= 80) return 'Advanced';
-    if (score >= 60) return 'Established';
-    if (score >= 40) return 'Developing';
-    if (score >= 20) return 'Basic';
-    return 'Initial';
-  };
-
-  const renderRadarChart = (scores) => {
-    const data = {
-      labels: scores.dimensions.map(d => d.dimension),
+      labels: PILLARS.map((p) => p.name.split(',')[0]),
       datasets: [
         {
-          label: 'Readiness Score',
-          data: scores.dimensions.map(d => Math.round(d.score)),
-          backgroundColor: 'rgba(237, 156, 49, 0.24)',
-          borderColor: 'rgba(237, 156, 49, 1)',
+          label: 'Current',
+          data: roll.pillarRollups.map((pr) => pr.currentAvg ?? 0),
+          backgroundColor: 'rgba(242, 160, 36, 0.24)',
+          borderColor: 'rgba(242, 160, 36, 1)',
           borderWidth: 2,
-          pointBackgroundColor: 'rgba(237, 156, 49, 1)',
-          pointBorderColor: '#fff',
-          pointHoverBackgroundColor: '#fff',
-          pointHoverBorderColor: 'rgba(237, 156, 49, 1)'
-        }
-      ]
+          pointBackgroundColor: 'rgba(242, 160, 36, 1)',
+        },
+        {
+          label: 'Target',
+          data: roll.pillarRollups.map((pr) => pr.targetAvg ?? 0),
+          backgroundColor: 'rgba(245, 241, 234, 0.06)',
+          borderColor: 'rgba(245, 241, 234, 0.55)',
+          borderWidth: 1.5,
+          borderDash: [4, 4],
+          pointBackgroundColor: 'rgba(245, 241, 234, 0.85)',
+        },
+      ],
     };
+  }, [roll]);
 
-    const options = {
+  const radarOptions = useMemo(
+    () => ({
       scales: {
         r: {
-          angleLines: { display: true, color: 'rgba(245, 241, 234, 0.16)' },
-          grid: { color: 'rgba(245, 241, 234, 0.10)' },
+          angleLines: { color: 'rgba(245, 241, 234, 0.16)' },
+          grid: { color: 'rgba(245, 241, 234, 0.1)' },
           suggestedMin: 0,
-          suggestedMax: 100,
+          suggestedMax: 5,
           ticks: {
-            stepSize: 20,
+            stepSize: 1,
             color: 'rgba(245, 241, 234, 0.55)',
             backdropColor: 'transparent',
           },
           pointLabels: {
-            color: 'rgba(245, 241, 234, 0.85)',
+            color: 'rgba(245, 241, 234, 0.9)',
             font: { family: 'JetBrains Mono', size: 11 },
           },
-        }
+        },
       },
       plugins: {
-        legend: { display: false }
-      }
+        legend: {
+          position: 'bottom' as const,
+          labels: { color: 'rgba(245, 241, 234, 0.85)', font: { family: 'JetBrains Mono', size: 11 } },
+        },
+      },
+    }),
+    [],
+  );
+
+  const allRauDimIds = roll.pillarRollups.flatMap((pr) => pr.rauDimensionIds);
+  const allHealthyDimIds = roll.pillarRollups.flatMap((pr) => pr.healthyDimensionIds);
+
+  // Build prioritized action list: dimensions sorted by gap desc, taking
+  // the action whose from_level matches current capability.
+  const priorityActions = useMemo(() => {
+    const entries: { dim: typeof DIMENSION_BY_ID[string]; gap: number; current: CapabilityLevel; action?: typeof ACTIONS[number] }[] = [];
+    for (const r of responseList) {
+      if (r.current == null || r.target == null) continue;
+      const gap = r.target - r.current;
+      if (gap <= 0) continue;
+      const q = QUESTIONS.find((x) => x.id === r.questionId);
+      if (!q) continue;
+      const dim = DIMENSION_BY_ID[q.dimension_id];
+      const acts = ACTIONS_BY_DIMENSION[q.dimension_id] ?? [];
+      const next = acts.find((a) => a.from_level === r.current) ?? acts[0];
+      entries.push({ dim, gap, current: r.current, action: next });
+    }
+    return entries.sort((a, b) => b.gap - a.gap).slice(0, 12);
+  }, [responseList]);
+
+  const downloadJson = () => {
+    const payload = {
+      assessment_id: crypto.randomUUID?.() ?? `kanz-${Date.now()}`,
+      framework_version: '3.0.0',
+      generated_at: new Date().toISOString(),
+      organization: { name: orgName || null, weighting_profile: profile },
+      responses: responseList.map((r) => {
+        const q = QUESTIONS.find((x) => x.id === r.questionId);
+        return {
+          question_id: r.questionId,
+          dimension_id: q?.dimension_id,
+          pillar_id: q?.pillar_id,
+          current: r.current,
+          target: r.target,
+          gap: dimensionGap(r),
+          nist_tier: r.nistTier,
+        };
+      }),
+      computed: {
+        pillar_averages: roll.pillarRollups.reduce<Record<string, { current_avg: number | null; target_avg: number | null; gap_avg: number | null }>>(
+          (acc, pr) => {
+            acc[pr.pillarId] = {
+              current_avg: pr.currentAvg,
+              target_avg: pr.targetAvg,
+              gap_avg: pr.gapAvg,
+            };
+            return acc;
+          },
+          {},
+        ),
+        org_composite: roll.composite,
+        org_avg_gap: roll.avgGap,
+        org_risk_tier: roll.riskTier,
+        rau_dimensions: allRauDimIds,
+        healthy_dimensions: allHealthyDimIds,
+      },
     };
-
-    return (
-      <div className="bg-white p-6 rounded-lg shadow-md mb-8">
-        <h3 className="text-xl font-bold mb-4 text-center">AI Readiness Dimensions Overview</h3>
-        <div className="w-full max-w-2xl mx-auto">
-          <Radar data={data} options={options} />
-        </div>
-      </div>
-    );
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ai-readiness-${(orgName || 'kanz').toLowerCase().replace(/\s+/g, '-')}-${new Date()
+      .toISOString()
+      .slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
-
-  const renderReport = () => {
-    const scores = calculateOverallScore();
-    const maturityLevel = getMaturityLevel(scores.overall);
-
-    return (
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-white rounded-lg shadow-lg p-8">
-          <h2 className="text-3xl font-bold mb-6 text-center">AI Readiness Assessment Report</h2>
-          
-          {/* Overall Score */}
-          <div className="mb-12 text-center">
-            <div className="inline-block bg-orange-100 rounded-full p-6 mb-4">
-              <Brain className="h-12 w-12 text-pwc-orange" />
-            </div>
-            <h3 className="text-2xl font-bold mb-2">Overall Maturity Level</h3>
-            <div className="text-4xl font-bold text-pwc-orange mb-2">
-              {maturityLevel}
-            </div>
-            <div className="text-xl text-gray-600">
-              Overall Score: {Math.round(scores.overall)}%
-            </div>
-          </div>
-
-          {/* Radar Chart */}
-          {renderRadarChart(scores)}
-
-          {/* Dimension Scores */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
-            {scores.dimensions.map(({ dimension, score }) => (
-              <div key={dimension} className="bg-gray-50 rounded-lg p-6">
-                <h4 className="text-lg font-semibold mb-3">{dimension}</h4>
-                <div className="relative pt-1">
-                  <div className="flex mb-2 items-center justify-between">
-                    <div className="text-right">
-                      <span className="text-xl font-semibold inline-block text-pwc-orange">
-                        {Math.round(score)}%
-                      </span>
-                    </div>
-                  </div>
-                  <div className="overflow-hidden h-2 mb-4 text-xs flex rounded bg-gray-200">
-                    <div
-                      style={{ width: `${score}%` }}
-                      className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-pwc-orange transition-all duration-500"
-                    ></div>
-                  </div>
-                  <div className="text-sm text-gray-600">
-                    Maturity Level: {getMaturityLevel(score)}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Recommendations */}
-          <div className="bg-gray-50 rounded-lg p-6">
-            <h3 className="text-xl font-bold mb-4">Key Recommendations</h3>
-            <div className="space-y-4">
-              {scores.dimensions.map(({ dimension, score }) => {
-                const recommendations = getRecommendations(dimension, score);
-                return (
-                  <div key={dimension} className="border-b border-gray-200 pb-4 last:border-0">
-                    <h4 className="font-semibold mb-2">{dimension}</h4>
-                    <ul className="list-disc list-inside text-gray-600 space-y-2">
-                      {recommendations.map((rec, index) => (
-                        <li key={index}>{rec}</li>
-                      ))}
-                    </ul>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="mt-8 flex justify-center space-x-4">
-            <button
-              onClick={() => window.print()}
-              className="bg-pwc-gray text-white px-6 py-2 rounded-md hover:bg-gray-700 transition-colors"
-            >
-              Download Report
-            </button>
-            <button
-              onClick={() => {
-                setShowReport(false);
-                setCurrentQuestion(0);
-                setAnswers({});
-              }}
-              className="bg-pwc-orange text-white px-6 py-2 rounded-md hover:bg-[#b33f02] transition-colors"
-            >
-              Start New Assessment
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  if (showReport) {
-    return (
-      <div className="pt-16">
-        <section className="bg-gradient-to-r from-pwc-orange to-[#b33f02] text-white py-20">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              className="text-center"
-            >
-              <h1 className="text-4xl md:text-5xl font-bold mb-6">Your AI Readiness Report</h1>
-              <p className="text-xl max-w-3xl mx-auto">
-                Comprehensive analysis of your organization's AI maturity and recommendations
-              </p>
-            </motion.div>
-          </div>
-        </section>
-        <section className="py-20">
-          {renderReport()}
-        </section>
-      </div>
-    );
-  }
 
   return (
-    <div className="pt-16">
-      {/* Hero Section */}
-      <section className="bg-gradient-to-r from-pwc-orange to-[#b33f02] text-white py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="text-center"
+    <section style={{ padding: '100px 0 120px' }}>
+      <Container>
+        <MonoEyebrow>{orgName || 'Your organization'} · profile: {profile}</MonoEyebrow>
+        <DisplayHead size="clamp(40px, 6vw, 76px)" style={{ marginBottom: 36, maxWidth: 1200 }}>
+          AI Readiness <GoldItalic>dashboard.</GoldItalic>
+        </DisplayHead>
+
+        {/* RAU banner */}
+        {roll.totalRau > 0 && (
+          <div
+            style={{
+              background: 'var(--paper-2)',
+              borderLeft: `4px solid ${RAU_RED}`,
+              padding: '20px 24px',
+              marginBottom: 32,
+            }}
           >
-            <h1 className="text-4xl md:text-5xl font-bold mb-6">AI Readiness Assessment</h1>
-            <p className="text-xl max-w-3xl mx-auto">
-              Evaluate your organization's preparedness for AI implementation and get actionable insights
+            <MonoEyebrow style={{ color: RAU_RED }}>RAU · racing ahead unsafely</MonoEyebrow>
+            <p style={{ margin: 0, fontSize: 16, lineHeight: 1.55, color: 'var(--ink)' }}>
+              Your capability has outrun your risk maturity in <strong>{roll.totalRau}</strong>{' '}
+              dimension{roll.totalRau === 1 ? '' : 's'}. Pause capability investment in these areas until risk
+              maturity catches up.
             </p>
-          </motion.div>
+          </div>
+        )}
+
+        {/* Top stats */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 4, marginBottom: 48 }}>
+          <Stat label="Org composite" value={roll.composite != null ? roll.composite.toFixed(2) : '—'} />
+          <Stat label="Avg gap" value={roll.avgGap != null ? roll.avgGap.toFixed(2) : '—'} />
+          <Stat label="Org risk tier" value={roll.riskTier ?? '—'} />
+          <Stat label="RAU dims" value={roll.totalRau} accent={roll.totalRau > 0 ? RAU_RED : undefined} />
+          <Stat label="Healthy dims" value={roll.totalHealthy} accent={HEALTHY_GREEN} />
         </div>
-      </section>
 
-      {/* Assessment Form */}
-      <section className="py-20">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="bg-white rounded-lg shadow-lg p-8">
-            {/* Progress Bar */}
-            <div className="mb-8">
-              <div className="h-2 bg-gray-200 rounded-full">
-                <div 
-                  className="h-2 bg-pwc-orange rounded-full transition-all duration-300"
-                  style={{ width: `${((currentQuestion + 1) / questions.length) * 100}%` }}
-                ></div>
-              </div>
-              <div className="text-center mt-2 text-gray-600">
-                Question {currentQuestion + 1} of {questions.length}
-              </div>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'minmax(380px, 1fr) minmax(280px, 1fr)',
+            gap: 32,
+            alignItems: 'start',
+            marginBottom: 56,
+          }}
+        >
+          <div style={{ background: 'var(--paper-2)', padding: 32 }}>
+            <MonoEyebrow>Capability by pillar</MonoEyebrow>
+            <Radar data={radarData} options={radarOptions} />
+          </div>
+          <div style={{ background: 'var(--paper-2)', padding: 32 }}>
+            <MonoEyebrow>Profile</MonoEyebrow>
+            <p style={{ fontSize: 14, color: 'var(--muted)', margin: '0 0 18px' }}>
+              Switch the weighting profile to recompute the composite.
+            </p>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {WEIGHTING_PROFILES.map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => setProfile(p.id)}
+                  style={{
+                    fontFamily: 'var(--mono)',
+                    fontSize: 11,
+                    letterSpacing: '0.06em',
+                    padding: '8px 14px',
+                    border: '1px solid var(--line-strong)',
+                    background: profile === p.id ? ACCENT : 'transparent',
+                    color: profile === p.id ? 'var(--paper)' : 'var(--ink)',
+                    cursor: 'pointer',
+                    borderRadius: 999,
+                  }}
+                >
+                  {p.name}
+                </button>
+              ))}
             </div>
-
-            {/* Question */}
-            <motion.div
-              key={currentQuestion}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.3 }}
-            >
-              <h2 className="text-2xl font-bold mb-6">{questions[currentQuestion].question}</h2>
-              <div className="space-y-4">
-                {questions[currentQuestion].options.map((option) => (
-                  <div
-                    key={option.value}
-                    className={`p-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ${
-                      answers[questions[currentQuestion].id] === option.value
-                        ? 'border-pwc-orange bg-orange-50'
-                        : 'border-gray-200 hover:border-pwc-orange'
-                    }`}
-                    onClick={() => handleAnswer(questions[currentQuestion].id, option.value)}
-                  >
-                    <div className="flex items-center">
-                      <div className={`w-6 h-6 rounded-full border-2 mr-3 flex items-center justify-center ${
-                        answers[questions[currentQuestion].id] === option.value
-                          ? 'border-pwc-orange bg-pwc-orange'
-                          : 'border-gray-300'
-                      }`}>
-                        {answers[questions[currentQuestion].id] === option.value && (
-                          <CheckCircle className="w-4 h-4 text-white" />
-                        )}
+            <div style={{ marginTop: 28 }}>
+              <MonoEyebrow>Per-pillar averages</MonoEyebrow>
+              <div style={{ display: 'grid', gap: 6 }}>
+                {roll.pillarRollups.map((pr) => {
+                  const pillar = PILLARS.find((p) => p.id === pr.pillarId)!;
+                  const cur = pr.currentAvg ?? 0;
+                  const tgt = pr.targetAvg ?? 0;
+                  return (
+                    <div key={pr.pillarId} style={{ fontFamily: 'var(--mono)', fontSize: 11 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--muted)', marginBottom: 4 }}>
+                        <span>
+                          {pillar.id} · {pillar.name}
+                        </span>
+                        <span style={{ color: 'var(--ink)' }}>
+                          {cur.toFixed(1)} → {tgt.toFixed(1)}
+                        </span>
                       </div>
-                      <span className="text-gray-700">{option.text}</span>
+                      <div style={{ height: 4, background: 'var(--paper)', position: 'relative' }}>
+                        <div
+                          style={{
+                            position: 'absolute',
+                            inset: 0,
+                            width: `${(tgt / 5) * 100}%`,
+                            background: 'rgba(245,241,234,0.15)',
+                          }}
+                        />
+                        <div
+                          style={{
+                            position: 'absolute',
+                            inset: 0,
+                            width: `${(cur / 5) * 100}%`,
+                            background: ACCENT,
+                          }}
+                        />
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
-            </motion.div>
-
-            {/* Navigation Buttons */}
-            <div className="flex justify-between mt-8">
-              <button
-                onClick={handlePrevious}
-                disabled={currentQuestion === 0}
-                className={`flex items-center px-6 py-2 rounded-md ${
-                  currentQuestion === 0
-                    ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                    : 'bg-pwc-gray text-white hover:bg-gray-700'
-                }`}
-              >
-                <ChevronLeft className="w-5 h-5 mr-2" />
-                Previous
-              </button>
-              <button
-                onClick={handleNext}
-                className="flex items-center px-6 py-2 rounded-md bg-pwc-orange text-white hover:bg-[#b33f02]"
-              >
-                {currentQuestion === questions.length - 1 ? 'Generate Report' : 'Next'}
-                <ChevronRight className="w-5 h-5 ml-2" />
-              </button>
             </div>
           </div>
         </div>
-      </section>
+
+        {/* RAU / healthy lists */}
+        {(allRauDimIds.length > 0 || allHealthyDimIds.length > 0) && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 32, marginBottom: 56 }}>
+            {allRauDimIds.length > 0 && (
+              <DimList title="RAU dimensions" color={RAU_RED} ids={allRauDimIds} />
+            )}
+            {allHealthyDimIds.length > 0 && (
+              <DimList title="Healthy dimensions" color={HEALTHY_GREEN} ids={allHealthyDimIds} />
+            )}
+          </div>
+        )}
+
+        {/* Action list */}
+        {priorityActions.length > 0 && (
+          <div style={{ marginBottom: 56 }}>
+            <h3 style={{ fontFamily: 'var(--display)', fontSize: 28, margin: '0 0 20px' }}>
+              Top priority actions
+            </h3>
+            <div style={{ display: 'grid', gap: 4 }}>
+              {priorityActions.map((entry, i) => (
+                <div
+                  key={`${entry.dim.id}-${i}`}
+                  style={{ background: 'var(--paper-2)', padding: '22px 24px' }}
+                >
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      marginBottom: 10,
+                      flexWrap: 'wrap',
+                      gap: 10,
+                    }}
+                  >
+                    <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: ACCENT, letterSpacing: '0.14em' }}>
+                      {entry.dim.id} · gap {entry.gap}
+                    </span>
+                    {entry.action && (
+                      <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--muted)' }}>
+                        {entry.action.effort} · {entry.action.duration_weeks ?? '—'}w ·{' '}
+                        {entry.action.owner_role}
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ fontFamily: 'var(--display)', fontSize: 18, color: 'var(--ink)', marginBottom: 6 }}>
+                    {entry.action?.title ?? `Close gap in ${entry.dim.name}`}
+                  </div>
+                  <p style={{ fontSize: 14, color: 'var(--muted)', margin: 0, lineHeight: 1.55 }}>
+                    {entry.action?.description ?? entry.dim.what_it_covers}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div
+          style={{
+            display: 'flex',
+            gap: 12,
+            justifyContent: 'flex-end',
+            borderTop: '1px solid var(--line)',
+            paddingTop: 28,
+          }}
+        >
+          <GhostButton onClick={onRestart}>Start over</GhostButton>
+          <PrimaryButton onClick={downloadJson}>Download JSON report</PrimaryButton>
+        </div>
+      </Container>
+    </section>
+  );
+}
+
+function DimList({ title, color, ids }: { title: string; color: string; ids: string[] }) {
+  return (
+    <div style={{ background: 'var(--paper-2)', padding: 24, borderLeft: `3px solid ${color}` }}>
+      <MonoEyebrow style={{ color }}>{title}</MonoEyebrow>
+      <ul style={{ margin: 0, padding: 0, listStyle: 'none' }}>
+        {ids.map((id) => {
+          const d = DIMENSION_BY_ID[id];
+          if (!d) return null;
+          return (
+            <li key={id} style={{ marginBottom: 8, fontSize: 14, color: 'var(--ink)' }}>
+              <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--muted)', marginRight: 8 }}>
+                {id}
+              </span>
+              {d.name}
+            </li>
+          );
+        })}
+      </ul>
     </div>
   );
-};
+}
 
-const getRecommendations = (dimension, score) => {
-  const recommendations = {
-    'Vision & Strategy': {
-      low: [
-        'Develop a comprehensive AI strategy aligned with business objectives',
-        'Secure leadership buy-in and support for AI initiatives',
-        'Create a roadmap for AI adoption and implementation'
-      ],
-      medium: [
-        'Refine and expand existing AI strategy',
-        'Increase cross-departmental alignment on AI initiatives',
-        'Develop metrics to measure AI impact'
-      ],
-      high: [
-        'Focus on innovation and emerging AI technologies',
-        'Share best practices across the organization',
-        'Explore new AI use cases and opportunities'
-      ]
-    },
-    'Use Cases': {
-      low: [
-        'Identify and prioritize initial AI use cases',
-        'Start with small, high-impact pilots',
-        'Develop use case evaluation framework'
-      ],
-      medium: [
-        'Scale successful pilot projects',
-        'Standardize use case development process',
-        'Implement ROI tracking for AI initiatives'
-      ],
-      high: [
-        'Explore advanced AI applications',
-        'Optimize existing use cases',
-        'Develop innovation pipeline'
-      ]
-    },
-    'Data': {
-      low: [
-        'Establish data governance framework',
-        'Improve data quality and accessibility',
-        'Implement data collection and storage standards'
-      ],
-      medium: [
-        'Enhance data integration capabilities',
-        'Implement advanced data quality measures',
-        'Develop data sharing protocols'
-      ],
-      high: [
-        'Implement real-time data processing',
-        'Advance data analytics capabilities',
-        'Optimize data architecture'
-      ]
-    },
-    'IT Infrastructure': {
-      low: [
-        'Assess current IT infrastructure capabilities',
-        'Identify infrastructure gaps for AI',
-        'Develop infrastructure upgrade plan'
-      ],
-      medium: [
-        'Implement scalable AI infrastructure',
-        'Enhance computing capabilities',
-        'Improve deployment processes'
-      ],
-      high: [
-        'Optimize infrastructure performance',
-        'Implement advanced monitoring',
-        'Explore edge computing capabilities'
-      ]
-    },
-    'People': {
-      low: [
-        'Develop AI training program',
-        'Identify key AI roles and responsibilities',
-        'Create AI awareness initiatives'
-      ],
-      medium: [
-        'Expand AI expertise across teams',
-        'Implement AI certification programs',
-        'Develop AI career paths'
-      ],
-      high: [
-        'Establish AI centers of excellence',
-        'Develop advanced AI training',
-        'Create knowledge sharing platforms'
-      ]
-    },
-    'Governance': {
-      low: [
-        'Establish AI governance framework',
-        'Develop AI policies and guidelines',
-        'Create ethical AI principles'
-      ],
-      medium: [
-        'Enhance monitoring and compliance',
-        'Implement risk management framework',
-        'Strengthen security measures'
-      ],
-      high: [
-        'Optimize governance processes',
-        'Advance ethical AI practices',
-        'Develop industry partnerships'
-      ]
-    }
+/* ------------------------------------------------------------------ */
+/*  Top-level page                                                      */
+/* ------------------------------------------------------------------ */
+
+const AIReadiness: React.FC = () => {
+  const [state, setState] = useState<State>(INITIAL);
+  const introIndex = INTRO_ORDER.indexOf(state.step as IntroStep);
+  const introTotal = INTRO_ORDER.length;
+
+  const goIntro = (step: IntroStep) => setState((s) => ({ ...s, step }));
+
+  const startAssessment = () =>
+    setState((s) => ({ ...s, step: 'question', pillarIndex: 0, qInPillar: 0 }));
+
+  const setResponse = (r: AssessResponse) =>
+    setState((s) => ({ ...s, responses: { ...s.responses, [r.questionId]: r } }));
+
+  const advanceQuestion = () => {
+    setState((s) => {
+      const pillar = PILLARS[s.pillarIndex];
+      const pillarQs = QUESTIONS_BY_PILLAR[pillar.id] ?? [];
+      if (s.qInPillar < pillarQs.length - 1) {
+        return { ...s, qInPillar: s.qInPillar + 1 };
+      }
+      return { ...s, step: 'pillar_summary' };
+    });
   };
 
-  if (score < 40) return recommendations[dimension].low;
-  if (score < 70) return recommendations[dimension].medium;
-  return recommendations[dimension].high;
+  const previousQuestion = () => {
+    setState((s) => {
+      if (s.qInPillar > 0) return { ...s, qInPillar: s.qInPillar - 1 };
+      if (s.pillarIndex > 0) {
+        const prevPillar = PILLARS[s.pillarIndex - 1];
+        const prevQs = QUESTIONS_BY_PILLAR[prevPillar.id] ?? [];
+        return { ...s, pillarIndex: s.pillarIndex - 1, qInPillar: prevQs.length - 1 };
+      }
+      return s;
+    });
+  };
+
+  const continueAfterSummary = () => {
+    setState((s) => {
+      if (s.pillarIndex < PILLARS.length - 1) {
+        return { ...s, step: 'question', pillarIndex: s.pillarIndex + 1, qInPillar: 0 };
+      }
+      return { ...s, step: 'dashboard' };
+    });
+  };
+
+  const restart = () => setState(INITIAL);
+
+  /* ----- Hero shown above intro screens only ----- */
+  const showHero = INTRO_ORDER.includes(state.step as IntroStep);
+
+  return (
+    <div>
+      {showHero && (
+        <PageHero
+          kicker="06 / AI Readiness"
+          title="Assess your"
+          italic="AI readiness."
+          lede="A 52-dimension framework across 9 pillars. Each dimension scored on capability and NIST risk-maturity tier — so growth without governance gets flagged, not rewarded."
+          meta={['9 pillars', '52 dimensions', '~45–60 min']}
+        />
+      )}
+
+      {state.step === 'concepts' && (
+        <IntroConcepts
+          index={introIndex + 1}
+          total={introTotal}
+          onNext={() => goIntro('scales')}
+        />
+      )}
+      {state.step === 'scales' && (
+        <IntroScales
+          index={introIndex + 1}
+          total={introTotal}
+          onBack={() => goIntro('concepts')}
+          onNext={() => goIntro('weighting')}
+        />
+      )}
+      {state.step === 'weighting' && (
+        <IntroWeighting
+          index={introIndex + 1}
+          total={introTotal}
+          profile={state.profile}
+          setProfile={(p) => setState((s) => ({ ...s, profile: p }))}
+          onBack={() => goIntro('scales')}
+          onNext={() => goIntro('sections')}
+        />
+      )}
+      {state.step === 'sections' && (
+        <IntroSections
+          index={introIndex + 1}
+          total={introTotal}
+          onBack={() => goIntro('weighting')}
+          onNext={() => goIntro('setup')}
+        />
+      )}
+      {state.step === 'setup' && (
+        <IntroSetup
+          index={introIndex + 1}
+          total={introTotal}
+          orgName={state.orgName}
+          setOrgName={(v) => setState((s) => ({ ...s, orgName: v }))}
+          onBack={() => goIntro('sections')}
+          onStart={startAssessment}
+        />
+      )}
+
+      {state.step === 'question' && (
+        <QuestionScreen
+          pillarIndex={state.pillarIndex}
+          qInPillar={state.qInPillar}
+          responses={state.responses}
+          setResponse={setResponse}
+          onPrev={previousQuestion}
+          onNext={advanceQuestion}
+        />
+      )}
+      {state.step === 'pillar_summary' && (
+        <PillarSummary
+          pillarIndex={state.pillarIndex}
+          responses={state.responses}
+          profile={state.profile}
+          onBack={() => setState((s) => ({ ...s, step: 'question' }))}
+          onNext={continueAfterSummary}
+        />
+      )}
+      {state.step === 'dashboard' && (
+        <Dashboard
+          responses={state.responses}
+          profile={state.profile}
+          setProfile={(p) => setState((s) => ({ ...s, profile: p }))}
+          orgName={state.orgName}
+          onRestart={restart}
+        />
+      )}
+    </div>
+  );
 };
 
 export default AIReadiness;
