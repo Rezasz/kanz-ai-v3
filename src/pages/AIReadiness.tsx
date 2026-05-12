@@ -10,23 +10,27 @@ import {
 } from 'chart.js';
 import { Radar } from 'react-chartjs-2';
 import {
-  ACTIONS,
   ACTIONS_BY_DIMENSION,
   CAPABILITY_LEVELS,
-  DIMENSION_BY_ID,
+  FRAMEWORK_VERSION,
   NIST_TIERS,
   PILLARS,
-  QUESTIONS,
-  QUESTIONS_BY_PILLAR,
+  TRIPLETS,
+  TRIPLETS_BY_PILLAR,
+  TRIPLET_BY_DIMENSION_ID,
   WEIGHTING_PROFILES,
   dimensionGap,
   gapPriority,
   isHealthy,
   isRau,
   orgRollup,
+  pillarWeight,
   type CapabilityLevel,
+  type CapabilityOption,
+  type DimensionTriplet,
   type NistTier,
   type Response as AssessResponse,
+  type RiskTierOption,
   type WeightingProfileId,
 } from '@/lib/aiReadinessFramework';
 import { Container, DisplayHead, Eyebrow, GoldItalic, PageHero } from '@/components/design';
@@ -34,7 +38,7 @@ import { Container, DisplayHead, Eyebrow, GoldItalic, PageHero } from '@/compone
 ChartJS.register(RadialLinearScale, PointElement, LineElement, Filler, Tooltip, Legend);
 
 /* ------------------------------------------------------------------ */
-/*  Types + step machine                                                */
+/*  Step machine                                                        */
 /* ------------------------------------------------------------------ */
 
 type IntroStep = 'concepts' | 'scales' | 'weighting' | 'sections' | 'setup';
@@ -47,9 +51,9 @@ type State = {
   step: Step;
   profile: WeightingProfileId;
   orgName: string;
-  pillarIndex: number; // 0..8 — only relevant once questions begin
-  qInPillar: number; // 0..N within current pillar
-  responses: Record<string, AssessResponse>;
+  pillarIndex: number; // 0..8 within PILLARS
+  dimInPillar: number; // 0..N within current pillar's triplets
+  responses: Record<string, AssessResponse>; // keyed by dimensionId
 };
 
 const INITIAL: State = {
@@ -57,35 +61,33 @@ const INITIAL: State = {
   profile: 'default',
   orgName: '',
   pillarIndex: 0,
-  qInPillar: 0,
+  dimInPillar: 0,
   responses: {},
 };
-
-/* ------------------------------------------------------------------ */
-/*  Shared atoms                                                        */
-/* ------------------------------------------------------------------ */
 
 const ACCENT = 'var(--accent)';
 const RAU_RED = '#E0552B';
 const HEALTHY_GREEN = '#8FBF7A';
 
+/* ------------------------------------------------------------------ */
+/*  Atoms                                                               */
+/* ------------------------------------------------------------------ */
+
 function PrimaryButton({
   children,
   onClick,
   disabled,
-  type = 'button',
   style,
 }: {
   children: React.ReactNode;
   onClick?: () => void;
   disabled?: boolean;
-  type?: 'button' | 'submit';
   style?: React.CSSProperties;
 }) {
   const [hover, setHover] = useState(false);
   return (
     <button
-      type={type}
+      type="button"
       onClick={onClick}
       disabled={disabled}
       onMouseEnter={() => setHover(true)}
@@ -146,7 +148,13 @@ function GhostButton({
   );
 }
 
-function MonoEyebrow({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
+function MonoEyebrow({
+  children,
+  style,
+}: {
+  children: React.ReactNode;
+  style?: React.CSSProperties;
+}) {
   return (
     <div
       style={{
@@ -222,7 +230,7 @@ function StepIntroFrame({
 }
 
 /* ------------------------------------------------------------------ */
-/*  Intro: Concepts                                                     */
+/*  Intro screens                                                       */
 /* ------------------------------------------------------------------ */
 
 function IntroConcepts({ index, total, onNext }: { index: number; total: number; onNext: () => void }) {
@@ -236,9 +244,9 @@ function IntroConcepts({ index, total, onNext }: { index: number; total: number;
       onNext={onNext}
     >
       <p style={{ fontSize: 19, lineHeight: 1.55, color: 'var(--ink)', maxWidth: 880, margin: '0 0 32px' }}>
-        Every dimension in this assessment is measured on two independent axes — not just "how mature are we?" but
-        "how well do we control the risk?" Treating them as one number is what produces AI programmes that scale
-        capability faster than safety.
+        Every dimension in this assessment is measured on two independent axes — not just "how mature are we?"
+        but "how well do we control the risk?" Treating them as one number is what produces AI programmes that
+        scale capability faster than safety.
       </p>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 4 }}>
         {[
@@ -289,17 +297,13 @@ function IntroConcepts({ index, total, onNext }: { index: number; total: number;
         <MonoEyebrow style={{ color: RAU_RED }}>RAU — racing ahead unsafely</MonoEyebrow>
         <p style={{ margin: 0, fontSize: 15, lineHeight: 1.6, color: 'var(--ink)' }}>
           When capability runs ahead of risk maturity (capability &ge; 4 with a Partial or Risk-Informed tier),
-          the dimension is flagged red on the dashboard. It’s the framework’s explicit danger signal —
-          pause capability investment until risk maturity catches up.
+          the dimension is flagged red on the dashboard. It’s the framework’s explicit danger signal — pause
+          capability investment until risk maturity catches up.
         </p>
       </div>
     </StepIntroFrame>
   );
 }
-
-/* ------------------------------------------------------------------ */
-/*  Intro: Answer scales                                                */
-/* ------------------------------------------------------------------ */
 
 function IntroScales({
   index,
@@ -330,11 +334,18 @@ function IntroScales({
       <h3 style={{ fontFamily: 'var(--display)', fontSize: 22, margin: '0 0 16px' }}>
         Capability scale <span style={{ color: 'var(--muted)', fontSize: 14, marginLeft: 8 }}>(1 – 5)</span>
       </h3>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 4, marginBottom: 48 }}>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))',
+          gap: 4,
+          marginBottom: 48,
+        }}
+      >
         {CAPABILITY_LEVELS.map((lv) => (
-          <div key={lv.value} style={{ background: 'var(--paper-2)', padding: '24px 22px 22px' }}>
+          <div key={lv.id} style={{ background: 'var(--paper-2)', padding: '24px 22px 22px' }}>
             <div style={{ fontFamily: 'var(--mono)', fontSize: 12, color: ACCENT, marginBottom: 10 }}>
-              {lv.value} / 5
+              {lv.id} / 5
             </div>
             <div
               style={{
@@ -345,7 +356,7 @@ function IntroScales({
                 color: 'var(--ink)',
               }}
             >
-              {lv.name}
+              {lv.label}
             </div>
             <p style={{ fontSize: 13, lineHeight: 1.55, color: 'var(--muted)', margin: 0 }}>{lv.definition}</p>
           </div>
@@ -368,7 +379,7 @@ function IntroScales({
                 color: 'var(--ink)',
               }}
             >
-              {t.name}
+              {t.label}
             </div>
             <p style={{ fontSize: 13, lineHeight: 1.55, color: 'var(--muted)', margin: 0 }}>{t.meaning}</p>
           </div>
@@ -377,10 +388,6 @@ function IntroScales({
     </StepIntroFrame>
   );
 }
-
-/* ------------------------------------------------------------------ */
-/*  Intro: Weighting profile                                            */
-/* ------------------------------------------------------------------ */
 
 function IntroWeighting({
   index,
@@ -443,14 +450,7 @@ function IntroWeighting({
               >
                 Profile / {p.id}
               </div>
-              <div
-                style={{
-                  fontFamily: 'var(--display)',
-                  fontSize: 22,
-                  fontWeight: 600,
-                  marginBottom: 10,
-                }}
-              >
+              <div style={{ fontFamily: 'var(--display)', fontSize: 22, fontWeight: 600, marginBottom: 10 }}>
                 {p.name}
               </div>
               <p
@@ -470,13 +470,7 @@ function IntroWeighting({
 
       <div style={{ marginTop: 40 }}>
         <MonoEyebrow>Per-pillar weights ({profile})</MonoEyebrow>
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
-            gap: 4,
-          }}
-        >
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 4 }}>
           {PILLARS.map((p) => (
             <div key={p.id} style={{ background: 'var(--paper-2)', padding: '16px 18px' }}>
               <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: ACCENT, letterSpacing: '0.16em' }}>
@@ -484,7 +478,7 @@ function IntroWeighting({
               </div>
               <div style={{ fontSize: 13, color: 'var(--muted)', margin: '4px 0 8px' }}>{p.name}</div>
               <div style={{ fontFamily: 'var(--display)', fontSize: 22, color: 'var(--ink)' }}>
-                {p.weights[profile].toFixed(1)}
+                {pillarWeight(p.id, profile).toFixed(1)}
               </div>
             </div>
           ))}
@@ -493,10 +487,6 @@ function IntroWeighting({
     </StepIntroFrame>
   );
 }
-
-/* ------------------------------------------------------------------ */
-/*  Intro: Sections overview                                            */
-/* ------------------------------------------------------------------ */
 
 function IntroSections({
   index,
@@ -515,25 +505,27 @@ function IntroSections({
       total={total}
       kicker="04 / Before you begin"
       title="Nine pillars,"
-      italic="fifty-two questions."
+      italic="fifty-two dimensions."
       onBack={onBack}
       onNext={onNext}
     >
       <p style={{ fontSize: 17, lineHeight: 1.55, color: 'var(--ink)', maxWidth: 880, margin: '0 0 36px' }}>
-        The assessment walks you through 9 pillars in order. You can move freely between questions and revisit
-        anything. Allow ~45–60 minutes for a complete pass.
+        The assessment walks you through 9 pillars. For each dimension you’ll answer three questions: current
+        capability, target capability, and risk-control tier. Allow ~60 minutes for a complete pass.
       </p>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 4 }}>
         {PILLARS.map((p) => {
-          const qCount = QUESTIONS_BY_PILLAR[p.id]?.length ?? 0;
+          const dimCount = TRIPLETS_BY_PILLAR[p.id]?.length ?? 0;
           return (
             <div key={p.id} style={{ background: 'var(--paper-2)', padding: '28px 26px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10 }}>
+              <div
+                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10 }}
+              >
                 <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: ACCENT, letterSpacing: '0.16em' }}>
                   {p.id}
                 </span>
                 <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--muted)' }}>
-                  {qCount} questions
+                  {dimCount} dimensions
                 </span>
               </div>
               <div
@@ -556,10 +548,6 @@ function IntroSections({
     </StepIntroFrame>
   );
 }
-
-/* ------------------------------------------------------------------ */
-/*  Intro: Setup                                                        */
-/* ------------------------------------------------------------------ */
 
 function IntroSetup({
   index,
@@ -626,240 +614,50 @@ function IntroSetup({
 }
 
 /* ------------------------------------------------------------------ */
-/*  Question screen                                                     */
+/*  Question screen — one per dimension, three sub-questions stacked   */
 /* ------------------------------------------------------------------ */
 
-function QuestionScreen({
-  pillarIndex,
-  qInPillar,
-  responses,
-  setResponse,
-  onPrev,
-  onNext,
-}: {
-  pillarIndex: number;
-  qInPillar: number;
-  responses: Record<string, AssessResponse>;
-  setResponse: (r: AssessResponse) => void;
-  onPrev: () => void;
-  onNext: () => void;
-}) {
-  const pillar = PILLARS[pillarIndex];
-  const pillarQs = QUESTIONS_BY_PILLAR[pillar.id] ?? [];
-  const q = pillarQs[qInPillar];
-  const dim = DIMENSION_BY_ID[q.dimension_id];
-  const r = responses[q.id] ?? { questionId: q.id, current: null, target: null, nistTier: null };
-
-  const answered = QUESTIONS.findIndex((x) => x.id === q.id);
-  const globalIndex = answered + 1;
-
-  const update = (patch: Partial<AssessResponse>) =>
-    setResponse({ ...r, questionId: q.id, ...patch });
-
-  const isFirstEver = pillarIndex === 0 && qInPillar === 0;
-  const complete = r.current != null && r.target != null && r.nistTier != null;
-
-  return (
-    <section style={{ padding: '80px 0 60px' }}>
-      <Container>
-        {/* Top progress strip */}
-        <div style={{ marginBottom: 40 }}>
-          <div
-            style={{
-              fontFamily: 'var(--mono)',
-              fontSize: 11,
-              letterSpacing: '0.18em',
-              color: 'var(--muted)',
-              textTransform: 'uppercase',
-              display: 'flex',
-              justifyContent: 'space-between',
-              marginBottom: 12,
-            }}
-          >
-            <span>
-              {pillar.id} · {pillar.name}
-            </span>
-            <span>
-              Question {globalIndex} / {QUESTIONS.length}
-            </span>
-          </div>
-          <div style={{ height: 2, background: 'var(--paper-2)', position: 'relative' }}>
-            <div
-              style={{
-                height: '100%',
-                background: ACCENT,
-                width: `${(globalIndex / QUESTIONS.length) * 100}%`,
-                transition: 'width .3s ease',
-              }}
-            />
-          </div>
-          <div style={{ display: 'flex', gap: 4, marginTop: 16, flexWrap: 'wrap' }}>
-            {PILLARS.map((p, i) => (
-              <span
-                key={p.id}
-                style={{
-                  fontFamily: 'var(--mono)',
-                  fontSize: 9,
-                  letterSpacing: '0.18em',
-                  padding: '4px 8px',
-                  background: i === pillarIndex ? ACCENT : 'var(--paper-2)',
-                  color: i === pillarIndex ? 'var(--paper)' : i < pillarIndex ? 'var(--ink)' : 'var(--muted)',
-                  textTransform: 'uppercase',
-                }}
-              >
-                {p.id}
-              </span>
-            ))}
-          </div>
-        </div>
-
-        {/* Header */}
-        <MonoEyebrow style={{ color: ACCENT }}>
-          {q.id} · {dim.name}
-        </MonoEyebrow>
-        <h2
-          style={{
-            fontFamily: 'var(--display)',
-            fontSize: 'clamp(24px, 3.4vw, 36px)',
-            lineHeight: 1.2,
-            letterSpacing: '-0.01em',
-            color: 'var(--ink)',
-            margin: '0 0 24px',
-            maxWidth: 1000,
-          }}
-        >
-          {q.prompt}
-        </h2>
-
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-            gap: 4,
-            marginBottom: 36,
-            background: 'var(--paper-2)',
-            padding: 4,
-          }}
-        >
-          <div style={{ padding: '22px 24px' }}>
-            <MonoEyebrow>What it covers</MonoEyebrow>
-            <p style={{ fontSize: 14.5, lineHeight: 1.6, color: 'var(--ink-2)', margin: 0 }}>{dim.what_it_covers}</p>
-          </div>
-          <div style={{ padding: '22px 24px' }}>
-            <MonoEyebrow>Why it matters</MonoEyebrow>
-            <p style={{ fontSize: 14.5, lineHeight: 1.6, color: 'var(--ink-2)', margin: 0 }}>{dim.why_it_matters}</p>
-          </div>
-        </div>
-
-        {/* Current capability picker */}
-        <ScalePicker
-          label="Your current capability"
-          accentLetter="A"
-          value={r.current}
-          options={CAPABILITY_LEVELS.map((lv) => ({
-            value: lv.value,
-            head: `${lv.value} / 5 · ${lv.name}`,
-            body: dim.rubric[String(lv.value)] ?? lv.definition,
-          }))}
-          onSelect={(v) => update({ current: v as CapabilityLevel })}
-        />
-
-        {/* Target capability picker */}
-        <ScalePicker
-          label="Where you want to be (target)"
-          accentLetter="B"
-          value={r.target}
-          options={CAPABILITY_LEVELS.map((lv) => ({
-            value: lv.value,
-            head: `${lv.value} / 5 · ${lv.name}`,
-            body: dim.rubric[String(lv.value)] ?? lv.definition,
-          }))}
-          onSelect={(v) => update({ target: v as CapabilityLevel })}
-        />
-
-        {/* NIST tier picker */}
-        <ScalePicker
-          label="NIST risk-maturity tier (today)"
-          accentLetter="C"
-          value={r.nistTier}
-          options={NIST_TIERS.map((t) => ({
-            value: t.id,
-            head: t.name,
-            body: dim.nist_tier_profile[t.id] || t.meaning,
-          }))}
-          onSelect={(v) => update({ nistTier: v as NistTier })}
-        />
-
-        {dim.common_pitfalls.length > 0 && (
-          <div style={{ background: 'var(--paper-2)', padding: '20px 24px', marginBottom: 32 }}>
-            <MonoEyebrow>Common pitfalls</MonoEyebrow>
-            <ul style={{ margin: 0, paddingLeft: 18 }}>
-              {dim.common_pitfalls.map((p, i) => (
-                <li key={i} style={{ fontSize: 14, lineHeight: 1.6, color: 'var(--muted)', marginBottom: 4 }}>
-                  {p}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {/* Nav */}
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            borderTop: '1px solid var(--line)',
-            paddingTop: 28,
-            marginTop: 16,
-          }}
-        >
-          <GhostButton onClick={onPrev} disabled={isFirstEver}>
-            &larr; Back
-          </GhostButton>
-          <PrimaryButton onClick={onNext} disabled={!complete}>
-            {qInPillar === pillarQs.length - 1 ? 'Section summary' : 'Next question'} &rarr;
-          </PrimaryButton>
-        </div>
-      </Container>
-    </section>
-  );
-}
-
 function ScalePicker<T extends number | string>({
-  label,
-  accentLetter,
+  qid,
+  prompt,
   value,
   options,
   onSelect,
 }: {
-  label: string;
-  accentLetter: string;
+  qid: string;
+  prompt: string;
   value: T | null;
-  options: { value: T; head: string; body: string }[];
+  options: { value: T; label: string; description: string }[];
   onSelect: (v: T) => void;
 }) {
   return (
-    <div style={{ marginBottom: 28 }}>
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 14 }}>
+    <div style={{ marginBottom: 32 }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 14, flexWrap: 'wrap' }}>
         <span
           style={{
-            display: 'inline-flex',
-            width: 24,
-            height: 24,
-            borderRadius: '50%',
-            background: ACCENT,
-            color: 'var(--paper)',
             fontFamily: 'var(--mono)',
-            fontSize: 11,
-            fontWeight: 700,
-            alignItems: 'center',
-            justifyContent: 'center',
+            fontSize: 10,
+            letterSpacing: '0.2em',
+            textTransform: 'uppercase',
+            color: ACCENT,
+            background: 'rgba(242,160,36,0.12)',
+            padding: '4px 8px',
           }}
         >
-          {accentLetter}
+          {qid}
         </span>
-        <h3 style={{ fontFamily: 'var(--display)', fontSize: 18, margin: 0, color: 'var(--ink)' }}>{label}</h3>
+        <h3
+          style={{
+            fontFamily: 'var(--display)',
+            fontSize: 18,
+            margin: 0,
+            color: 'var(--ink)',
+            flex: '1 1 auto',
+            minWidth: 0,
+          }}
+        >
+          {prompt}
+        </h3>
       </div>
       <div style={{ display: 'grid', gap: 2 }}>
         {options.map((opt) => {
@@ -906,7 +704,7 @@ function ScalePicker<T extends number | string>({
                     marginBottom: 6,
                   }}
                 >
-                  {opt.head}
+                  {opt.label}
                 </span>
                 <span
                   style={{
@@ -916,7 +714,7 @@ function ScalePicker<T extends number | string>({
                     color: active ? 'var(--ink-on-light)' : 'var(--ink-2)',
                   }}
                 >
-                  {opt.body}
+                  {opt.description}
                 </span>
               </span>
             </button>
@@ -924,6 +722,219 @@ function ScalePicker<T extends number | string>({
         })}
       </div>
     </div>
+  );
+}
+
+function QuestionScreen({
+  pillarIndex,
+  dimInPillar,
+  responses,
+  setResponse,
+  onPrev,
+  onNext,
+}: {
+  pillarIndex: number;
+  dimInPillar: number;
+  responses: Record<string, AssessResponse>;
+  setResponse: (r: AssessResponse) => void;
+  onPrev: () => void;
+  onNext: () => void;
+}) {
+  const pillar = PILLARS[pillarIndex];
+  const triplets = TRIPLETS_BY_PILLAR[pillar.id] ?? [];
+  const t = triplets[dimInPillar];
+  const r = responses[t.dimensionId] ?? {
+    dimensionId: t.dimensionId,
+    current: null,
+    target: null,
+    nistTier: null,
+  };
+
+  const globalIndex = TRIPLETS.findIndex((x) => x.dimensionId === t.dimensionId) + 1;
+
+  const update = (patch: Partial<AssessResponse>) =>
+    setResponse({ ...r, dimensionId: t.dimensionId, ...patch });
+
+  const isFirstEver = pillarIndex === 0 && dimInPillar === 0;
+  const complete = r.current != null && r.target != null && r.nistTier != null;
+
+  const currentOptions = (t.current.options as CapabilityOption[]).map((o) => ({
+    value: o.id,
+    label: `${o.id} / 5 · ${o.label}`,
+    description: o.description,
+  }));
+  const targetOptions = (t.target.options as CapabilityOption[]).map((o) => ({
+    value: o.id,
+    label: `${o.id} / 5 · ${o.label}`,
+    description: o.description,
+  }));
+  const riskOptions = (t.risk.options as RiskTierOption[]).map((o) => ({
+    value: o.id,
+    label: o.label,
+    description: o.description,
+  }));
+
+  const showEvidencePrompt =
+    t.evidence &&
+    t.evidence_required_at != null &&
+    r.current != null &&
+    r.current >= t.evidence_required_at;
+
+  return (
+    <section style={{ padding: '80px 0 60px' }}>
+      <Container>
+        {/* Top progress strip */}
+        <div style={{ marginBottom: 40 }}>
+          <div
+            style={{
+              fontFamily: 'var(--mono)',
+              fontSize: 11,
+              letterSpacing: '0.18em',
+              color: 'var(--muted)',
+              textTransform: 'uppercase',
+              display: 'flex',
+              justifyContent: 'space-between',
+              marginBottom: 12,
+            }}
+          >
+            <span>
+              {pillar.id} · {pillar.name}
+            </span>
+            <span>
+              Dimension {globalIndex} / {TRIPLETS.length}
+            </span>
+          </div>
+          <div style={{ height: 2, background: 'var(--paper-2)', position: 'relative' }}>
+            <div
+              style={{
+                height: '100%',
+                background: ACCENT,
+                width: `${(globalIndex / TRIPLETS.length) * 100}%`,
+                transition: 'width .3s ease',
+              }}
+            />
+          </div>
+          <div style={{ display: 'flex', gap: 4, marginTop: 16, flexWrap: 'wrap' }}>
+            {PILLARS.map((p, i) => (
+              <span
+                key={p.id}
+                style={{
+                  fontFamily: 'var(--mono)',
+                  fontSize: 9,
+                  letterSpacing: '0.18em',
+                  padding: '4px 8px',
+                  background: i === pillarIndex ? ACCENT : 'var(--paper-2)',
+                  color: i === pillarIndex ? 'var(--paper)' : i < pillarIndex ? 'var(--ink)' : 'var(--muted)',
+                  textTransform: 'uppercase',
+                }}
+              >
+                {p.id}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        {/* Header — dimension */}
+        <MonoEyebrow style={{ color: ACCENT }}>
+          {t.dimensionId} · {t.dimensionName}
+        </MonoEyebrow>
+        <DisplayHead size="clamp(28px, 4vw, 48px)" style={{ margin: '0 0 24px', maxWidth: 1100 }}>
+          {t.dimensionName}
+        </DisplayHead>
+
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+            gap: 4,
+            marginBottom: 40,
+            background: 'var(--paper-2)',
+            padding: 4,
+          }}
+        >
+          <div style={{ padding: '22px 24px' }}>
+            <MonoEyebrow>What it covers</MonoEyebrow>
+            <p style={{ fontSize: 14.5, lineHeight: 1.6, color: 'var(--ink-2)', margin: 0 }}>{t.what_it_covers}</p>
+          </div>
+          <div style={{ padding: '22px 24px' }}>
+            <MonoEyebrow>Why it matters</MonoEyebrow>
+            <p style={{ fontSize: 14.5, lineHeight: 1.6, color: 'var(--ink-2)', margin: 0 }}>{t.why_it_matters}</p>
+          </div>
+        </div>
+
+        {/* The three atomic spec questions, prompts verbatim from the spec */}
+        <ScalePicker
+          qid={t.current.id}
+          prompt={t.current.prompt}
+          value={r.current}
+          options={currentOptions}
+          onSelect={(v) => update({ current: v as CapabilityLevel })}
+        />
+        <ScalePicker
+          qid={t.target.id}
+          prompt={t.target.prompt}
+          value={r.target}
+          options={targetOptions}
+          onSelect={(v) => update({ target: v as CapabilityLevel })}
+        />
+        <ScalePicker
+          qid={t.risk.id}
+          prompt={t.risk.prompt}
+          value={r.nistTier}
+          options={riskOptions}
+          onSelect={(v) => update({ nistTier: v as NistTier })}
+        />
+
+        {showEvidencePrompt && (
+          <div
+            style={{
+              background: 'var(--paper-2)',
+              padding: '22px 24px',
+              marginBottom: 32,
+              borderLeft: `3px solid ${ACCENT}`,
+            }}
+          >
+            <MonoEyebrow style={{ color: ACCENT }}>
+              {t.evidence?.id ?? 'Evidence'} · suggested (capability &ge; {t.evidence_required_at})
+            </MonoEyebrow>
+            <p style={{ margin: 0, fontSize: 14.5, lineHeight: 1.6, color: 'var(--ink)' }}>
+              {t.evidence?.prompt}
+            </p>
+          </div>
+        )}
+
+        {t.common_pitfalls.length > 0 && (
+          <div style={{ background: 'var(--paper-2)', padding: '20px 24px', marginBottom: 32 }}>
+            <MonoEyebrow>Common pitfalls</MonoEyebrow>
+            <ul style={{ margin: 0, paddingLeft: 18 }}>
+              {t.common_pitfalls.map((p, i) => (
+                <li key={i} style={{ fontSize: 14, lineHeight: 1.6, color: 'var(--muted)', marginBottom: 4 }}>
+                  {p}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            borderTop: '1px solid var(--line)',
+            paddingTop: 28,
+            marginTop: 16,
+          }}
+        >
+          <GhostButton onClick={onPrev} disabled={isFirstEver}>
+            &larr; Back
+          </GhostButton>
+          <PrimaryButton onClick={onNext} disabled={!complete}>
+            {dimInPillar === triplets.length - 1 ? 'Section summary' : 'Next dimension'} &rarr;
+          </PrimaryButton>
+        </div>
+      </Container>
+    </section>
   );
 }
 
@@ -945,8 +956,10 @@ function PillarSummary({
   onNext: () => void;
 }) {
   const pillar = PILLARS[pillarIndex];
-  const pillarQs = QUESTIONS_BY_PILLAR[pillar.id] ?? [];
-  const responseList = pillarQs.map((q) => responses[q.id]).filter(Boolean) as AssessResponse[];
+  const triplets = TRIPLETS_BY_PILLAR[pillar.id] ?? [];
+  const responseList = triplets
+    .map((t) => responses[t.dimensionId])
+    .filter(Boolean) as AssessResponse[];
 
   const currents = responseList.map((r) => r.current).filter((v): v is CapabilityLevel => v != null);
   const targets = responseList.map((r) => r.target).filter((v): v is CapabilityLevel => v != null);
@@ -960,31 +973,45 @@ function PillarSummary({
     <section style={{ padding: '100px 0 80px' }}>
       <Container>
         <MonoEyebrow>
-          {pillar.id} · weight {pillar.weights[profile].toFixed(1)} ({profile})
+          {pillar.id} · weight {pillarWeight(pillar.id, profile).toFixed(1)} ({profile})
         </MonoEyebrow>
         <DisplayHead size="clamp(36px, 5vw, 60px)" style={{ marginBottom: 24, maxWidth: 1000 }}>
           {pillar.name} <GoldItalic>summary.</GoldItalic>
         </DisplayHead>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 4, marginBottom: 40 }}>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+            gap: 4,
+            marginBottom: 40,
+          }}
+        >
           <Stat label="Current avg" value={avg(currents).toFixed(2)} />
           <Stat label="Target avg" value={avg(targets).toFixed(2)} />
           <Stat label="Gap avg" value={(avg(targets) - avg(currents)).toFixed(2)} />
-          <Stat label="RAU flags" value={rauResponses.length} accent={rauResponses.length > 0 ? RAU_RED : undefined} />
-          <Stat label="Healthy dims" value={healthyResponses.length} accent={healthyResponses.length > 0 ? HEALTHY_GREEN : undefined} />
+          <Stat
+            label="RAU flags"
+            value={rauResponses.length}
+            accent={rauResponses.length > 0 ? RAU_RED : undefined}
+          />
+          <Stat
+            label="Healthy dims"
+            value={healthyResponses.length}
+            accent={healthyResponses.length > 0 ? HEALTHY_GREEN : undefined}
+          />
         </div>
 
         <h3 style={{ fontFamily: 'var(--display)', fontSize: 22, margin: '40px 0 16px' }}>By dimension</h3>
         <div style={{ display: 'grid', gap: 2 }}>
-          {pillarQs.map((q) => {
-            const r = responses[q.id];
-            const dim = DIMENSION_BY_ID[q.dimension_id];
+          {triplets.map((t) => {
+            const r = responses[t.dimensionId];
             const rau = r ? isRau(r) : false;
             const healthy = r ? isHealthy(r) : false;
             const gap = r ? dimensionGap(r) : null;
             return (
               <div
-                key={q.id}
+                key={t.dimensionId}
                 style={{
                   background: 'var(--paper-2)',
                   padding: '18px 22px',
@@ -992,14 +1019,18 @@ function PillarSummary({
                   gridTemplateColumns: '1fr auto auto auto auto',
                   gap: 20,
                   alignItems: 'center',
-                  borderLeft: rau ? `3px solid ${RAU_RED}` : healthy ? `3px solid ${HEALTHY_GREEN}` : '3px solid transparent',
+                  borderLeft: rau
+                    ? `3px solid ${RAU_RED}`
+                    : healthy
+                    ? `3px solid ${HEALTHY_GREEN}`
+                    : '3px solid transparent',
                 }}
               >
                 <span style={{ color: 'var(--ink)' }}>
                   <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: ACCENT, marginRight: 10 }}>
-                    {q.id}
+                    {t.dimensionId}
                   </span>
-                  {dim.name}
+                  {t.dimensionName}
                 </span>
                 <Pill label={r?.current != null ? `${r.current}` : '—'} hint="Current" />
                 <Pill label={r?.target != null ? `${r.target}` : '—'} hint="Target" />
@@ -1045,14 +1076,7 @@ function Stat({ label, value, accent }: { label: string; value: string | number;
       >
         {label}
       </div>
-      <div
-        style={{
-          fontFamily: 'var(--display)',
-          fontSize: 36,
-          color: accent ?? ACCENT,
-          lineHeight: 1,
-        }}
-      >
+      <div style={{ fontFamily: 'var(--display)', fontSize: 36, color: accent ?? ACCENT, lineHeight: 1 }}>
         {value}
       </div>
     </div>
@@ -1061,14 +1085,7 @@ function Stat({ label, value, accent }: { label: string; value: string | number;
 
 function Pill({ label, hint }: { label: string | number; hint: string }) {
   return (
-    <div
-      style={{
-        textAlign: 'center',
-        fontFamily: 'var(--mono)',
-        fontSize: 11,
-        color: 'var(--muted)',
-      }}
-    >
+    <div style={{ textAlign: 'center', fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--muted)' }}>
       <div style={{ color: 'var(--ink)', fontSize: 14, marginBottom: 2 }}>{label}</div>
       <div style={{ letterSpacing: '0.14em', textTransform: 'uppercase' }}>{hint}</div>
     </div>
@@ -1092,13 +1109,13 @@ function Dashboard({
   orgName: string;
   onRestart: () => void;
 }) {
-  const responseList = QUESTIONS.map(
-    (q) => responses[q.id] ?? { questionId: q.id, current: null, target: null, nistTier: null },
+  const responseList: AssessResponse[] = TRIPLETS.map(
+    (t) => responses[t.dimensionId] ?? { dimensionId: t.dimensionId, current: null, target: null, nistTier: null },
   );
   const roll = useMemo(() => orgRollup(profile, responseList), [profile, responseList]);
 
-  const radarData = useMemo(() => {
-    return {
+  const radarData = useMemo(
+    () => ({
       labels: PILLARS.map((p) => p.name.split(',')[0]),
       datasets: [
         {
@@ -1119,8 +1136,9 @@ function Dashboard({
           pointBackgroundColor: 'rgba(245, 241, 234, 0.85)',
         },
       ],
-    };
-  }, [roll]);
+    }),
+    [roll],
+  );
 
   const radarOptions = useMemo(
     () => ({
@@ -1154,20 +1172,22 @@ function Dashboard({
   const allRauDimIds = roll.pillarRollups.flatMap((pr) => pr.rauDimensionIds);
   const allHealthyDimIds = roll.pillarRollups.flatMap((pr) => pr.healthyDimensionIds);
 
-  // Build prioritized action list: dimensions sorted by gap desc, taking
-  // the action whose from_level matches current capability.
   const priorityActions = useMemo(() => {
-    const entries: { dim: typeof DIMENSION_BY_ID[string]; gap: number; current: CapabilityLevel; action?: typeof ACTIONS[number] }[] = [];
+    const entries: {
+      dim: DimensionTriplet;
+      gap: number;
+      current: CapabilityLevel;
+      action?: (typeof ACTIONS_BY_DIMENSION)[string][number];
+    }[] = [];
     for (const r of responseList) {
       if (r.current == null || r.target == null) continue;
       const gap = r.target - r.current;
       if (gap <= 0) continue;
-      const q = QUESTIONS.find((x) => x.id === r.questionId);
-      if (!q) continue;
-      const dim = DIMENSION_BY_ID[q.dimension_id];
-      const acts = ACTIONS_BY_DIMENSION[q.dimension_id] ?? [];
+      const trip = TRIPLET_BY_DIMENSION_ID[r.dimensionId];
+      if (!trip) continue;
+      const acts = ACTIONS_BY_DIMENSION[r.dimensionId] ?? [];
       const next = acts.find((a) => a.from_level === r.current) ?? acts[0];
-      entries.push({ dim, gap, current: r.current, action: next });
+      entries.push({ dim: trip, gap, current: r.current, action: next });
     }
     return entries.sort((a, b) => b.gap - a.gap).slice(0, 12);
   }, [responseList]);
@@ -1175,15 +1195,20 @@ function Dashboard({
   const downloadJson = () => {
     const payload = {
       assessment_id: crypto.randomUUID?.() ?? `kanz-${Date.now()}`,
-      framework_version: '3.0.0',
+      framework_version: FRAMEWORK_VERSION,
       generated_at: new Date().toISOString(),
       organization: { name: orgName || null, weighting_profile: profile },
       responses: responseList.map((r) => {
-        const q = QUESTIONS.find((x) => x.id === r.questionId);
+        const trip = TRIPLET_BY_DIMENSION_ID[r.dimensionId];
         return {
-          question_id: r.questionId,
-          dimension_id: q?.dimension_id,
-          pillar_id: q?.pillar_id,
+          dimension_id: r.dimensionId,
+          pillar_id: trip?.pillarId,
+          question_ids: {
+            current: trip?.current.id,
+            target: trip?.target.id,
+            risk_tier: trip?.risk.id,
+            evidence: trip?.evidence?.id ?? null,
+          },
           current: r.current,
           target: r.target,
           gap: dimensionGap(r),
@@ -1191,17 +1216,12 @@ function Dashboard({
         };
       }),
       computed: {
-        pillar_averages: roll.pillarRollups.reduce<Record<string, { current_avg: number | null; target_avg: number | null; gap_avg: number | null }>>(
-          (acc, pr) => {
-            acc[pr.pillarId] = {
-              current_avg: pr.currentAvg,
-              target_avg: pr.targetAvg,
-              gap_avg: pr.gapAvg,
-            };
-            return acc;
-          },
-          {},
-        ),
+        pillar_averages: roll.pillarRollups.reduce<
+          Record<string, { current_avg: number | null; target_avg: number | null; gap_avg: number | null }>
+        >((acc, pr) => {
+          acc[pr.pillarId] = { current_avg: pr.currentAvg, target_avg: pr.targetAvg, gap_avg: pr.gapAvg };
+          return acc;
+        }, {}),
         org_composite: roll.composite,
         org_avg_gap: roll.avgGap,
         org_risk_tier: roll.riskTier,
@@ -1223,12 +1243,13 @@ function Dashboard({
   return (
     <section style={{ padding: '100px 0 120px' }}>
       <Container>
-        <MonoEyebrow>{orgName || 'Your organization'} · profile: {profile}</MonoEyebrow>
+        <MonoEyebrow>
+          {orgName || 'Your organization'} · profile: {profile} · framework {FRAMEWORK_VERSION}
+        </MonoEyebrow>
         <DisplayHead size="clamp(40px, 6vw, 76px)" style={{ marginBottom: 36, maxWidth: 1200 }}>
           AI Readiness <GoldItalic>dashboard.</GoldItalic>
         </DisplayHead>
 
-        {/* RAU banner */}
         {roll.totalRau > 0 && (
           <div
             style={{
@@ -1240,15 +1261,21 @@ function Dashboard({
           >
             <MonoEyebrow style={{ color: RAU_RED }}>RAU · racing ahead unsafely</MonoEyebrow>
             <p style={{ margin: 0, fontSize: 16, lineHeight: 1.55, color: 'var(--ink)' }}>
-              Your capability has outrun your risk maturity in <strong>{roll.totalRau}</strong>{' '}
-              dimension{roll.totalRau === 1 ? '' : 's'}. Pause capability investment in these areas until risk
-              maturity catches up.
+              Your capability has outrun your risk maturity in <strong>{roll.totalRau}</strong> dimension
+              {roll.totalRau === 1 ? '' : 's'}. Pause capability investment in these areas until risk maturity
+              catches up.
             </p>
           </div>
         )}
 
-        {/* Top stats */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 4, marginBottom: 48 }}>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+            gap: 4,
+            marginBottom: 48,
+          }}
+        >
           <Stat label="Org composite" value={roll.composite != null ? roll.composite.toFixed(2) : '—'} />
           <Stat label="Avg gap" value={roll.avgGap != null ? roll.avgGap.toFixed(2) : '—'} />
           <Stat label="Org risk tier" value={roll.riskTier ?? '—'} />
@@ -1305,7 +1332,14 @@ function Dashboard({
                   const tgt = pr.targetAvg ?? 0;
                   return (
                     <div key={pr.pillarId} style={{ fontFamily: 'var(--mono)', fontSize: 11 }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--muted)', marginBottom: 4 }}>
+                      <div
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          color: 'var(--muted)',
+                          marginBottom: 4,
+                        }}
+                      >
                         <span>
                           {pillar.id} · {pillar.name}
                         </span>
@@ -1339,19 +1373,22 @@ function Dashboard({
           </div>
         </div>
 
-        {/* RAU / healthy lists */}
         {(allRauDimIds.length > 0 || allHealthyDimIds.length > 0) && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 32, marginBottom: 56 }}>
-            {allRauDimIds.length > 0 && (
-              <DimList title="RAU dimensions" color={RAU_RED} ids={allRauDimIds} />
-            )}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+              gap: 32,
+              marginBottom: 56,
+            }}
+          >
+            {allRauDimIds.length > 0 && <DimList title="RAU dimensions" color={RAU_RED} ids={allRauDimIds} />}
             {allHealthyDimIds.length > 0 && (
               <DimList title="Healthy dimensions" color={HEALTHY_GREEN} ids={allHealthyDimIds} />
             )}
           </div>
         )}
 
-        {/* Action list */}
         {priorityActions.length > 0 && (
           <div style={{ marginBottom: 56 }}>
             <h3 style={{ fontFamily: 'var(--display)', fontSize: 28, margin: '0 0 20px' }}>
@@ -1359,10 +1396,7 @@ function Dashboard({
             </h3>
             <div style={{ display: 'grid', gap: 4 }}>
               {priorityActions.map((entry, i) => (
-                <div
-                  key={`${entry.dim.id}-${i}`}
-                  style={{ background: 'var(--paper-2)', padding: '22px 24px' }}
-                >
+                <div key={`${entry.dim.dimensionId}-${i}`} style={{ background: 'var(--paper-2)', padding: '22px 24px' }}>
                   <div
                     style={{
                       display: 'flex',
@@ -1373,17 +1407,16 @@ function Dashboard({
                     }}
                   >
                     <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: ACCENT, letterSpacing: '0.14em' }}>
-                      {entry.dim.id} · gap {entry.gap}
+                      {entry.dim.dimensionId} · gap {entry.gap}
                     </span>
                     {entry.action && (
                       <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--muted)' }}>
-                        {entry.action.effort} · {entry.action.duration_weeks ?? '—'}w ·{' '}
-                        {entry.action.owner_role}
+                        {entry.action.effort} · {entry.action.duration_weeks ?? '—'}w · {entry.action.owner_role}
                       </span>
                     )}
                   </div>
                   <div style={{ fontFamily: 'var(--display)', fontSize: 18, color: 'var(--ink)', marginBottom: 6 }}>
-                    {entry.action?.title ?? `Close gap in ${entry.dim.name}`}
+                    {entry.action?.title ?? `Close gap in ${entry.dim.dimensionName}`}
                   </div>
                   <p style={{ fontSize: 14, color: 'var(--muted)', margin: 0, lineHeight: 1.55 }}>
                     {entry.action?.description ?? entry.dim.what_it_covers}
@@ -1417,14 +1450,14 @@ function DimList({ title, color, ids }: { title: string; color: string; ids: str
       <MonoEyebrow style={{ color }}>{title}</MonoEyebrow>
       <ul style={{ margin: 0, padding: 0, listStyle: 'none' }}>
         {ids.map((id) => {
-          const d = DIMENSION_BY_ID[id];
-          if (!d) return null;
+          const t = TRIPLET_BY_DIMENSION_ID[id];
+          if (!t) return null;
           return (
             <li key={id} style={{ marginBottom: 8, fontSize: 14, color: 'var(--ink)' }}>
               <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--muted)', marginRight: 8 }}>
                 {id}
               </span>
-              {d.name}
+              {t.dimensionName}
             </li>
           );
         })}
@@ -1445,29 +1478,27 @@ const AIReadiness: React.FC = () => {
   const goIntro = (step: IntroStep) => setState((s) => ({ ...s, step }));
 
   const startAssessment = () =>
-    setState((s) => ({ ...s, step: 'question', pillarIndex: 0, qInPillar: 0 }));
+    setState((s) => ({ ...s, step: 'question', pillarIndex: 0, dimInPillar: 0 }));
 
   const setResponse = (r: AssessResponse) =>
-    setState((s) => ({ ...s, responses: { ...s.responses, [r.questionId]: r } }));
+    setState((s) => ({ ...s, responses: { ...s.responses, [r.dimensionId]: r } }));
 
   const advanceQuestion = () => {
     setState((s) => {
       const pillar = PILLARS[s.pillarIndex];
-      const pillarQs = QUESTIONS_BY_PILLAR[pillar.id] ?? [];
-      if (s.qInPillar < pillarQs.length - 1) {
-        return { ...s, qInPillar: s.qInPillar + 1 };
-      }
+      const triplets = TRIPLETS_BY_PILLAR[pillar.id] ?? [];
+      if (s.dimInPillar < triplets.length - 1) return { ...s, dimInPillar: s.dimInPillar + 1 };
       return { ...s, step: 'pillar_summary' };
     });
   };
 
   const previousQuestion = () => {
     setState((s) => {
-      if (s.qInPillar > 0) return { ...s, qInPillar: s.qInPillar - 1 };
+      if (s.dimInPillar > 0) return { ...s, dimInPillar: s.dimInPillar - 1 };
       if (s.pillarIndex > 0) {
         const prevPillar = PILLARS[s.pillarIndex - 1];
-        const prevQs = QUESTIONS_BY_PILLAR[prevPillar.id] ?? [];
-        return { ...s, pillarIndex: s.pillarIndex - 1, qInPillar: prevQs.length - 1 };
+        const prevTriplets = TRIPLETS_BY_PILLAR[prevPillar.id] ?? [];
+        return { ...s, pillarIndex: s.pillarIndex - 1, dimInPillar: prevTriplets.length - 1 };
       }
       return s;
     });
@@ -1476,7 +1507,7 @@ const AIReadiness: React.FC = () => {
   const continueAfterSummary = () => {
     setState((s) => {
       if (s.pillarIndex < PILLARS.length - 1) {
-        return { ...s, step: 'question', pillarIndex: s.pillarIndex + 1, qInPillar: 0 };
+        return { ...s, step: 'question', pillarIndex: s.pillarIndex + 1, dimInPillar: 0 };
       }
       return { ...s, step: 'dashboard' };
     });
@@ -1484,7 +1515,6 @@ const AIReadiness: React.FC = () => {
 
   const restart = () => setState(INITIAL);
 
-  /* ----- Hero shown above intro screens only ----- */
   const showHero = INTRO_ORDER.includes(state.step as IntroStep);
 
   return (
@@ -1495,16 +1525,12 @@ const AIReadiness: React.FC = () => {
           title="Assess your"
           italic="AI readiness."
           lede="A 52-dimension framework across 9 pillars. Each dimension scored on capability and NIST risk-maturity tier — so growth without governance gets flagged, not rewarded."
-          meta={['9 pillars', '52 dimensions', '~45–60 min']}
+          meta={[`Framework v${FRAMEWORK_VERSION}`, '9 pillars', '52 dimensions', '156 questions']}
         />
       )}
 
       {state.step === 'concepts' && (
-        <IntroConcepts
-          index={introIndex + 1}
-          total={introTotal}
-          onNext={() => goIntro('scales')}
-        />
+        <IntroConcepts index={introIndex + 1} total={introTotal} onNext={() => goIntro('scales')} />
       )}
       {state.step === 'scales' && (
         <IntroScales
@@ -1546,7 +1572,7 @@ const AIReadiness: React.FC = () => {
       {state.step === 'question' && (
         <QuestionScreen
           pillarIndex={state.pillarIndex}
-          qInPillar={state.qInPillar}
+          dimInPillar={state.dimInPillar}
           responses={state.responses}
           setResponse={setResponse}
           onPrev={previousQuestion}
